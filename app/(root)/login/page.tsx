@@ -11,13 +11,10 @@ export default function LoginPage() {
             <div>
               <h1 className="text-lg font-bold text-[#8B1010] leading-tight">MABOLO NATIONAL HIGH SCHOOL</h1>
               <p className="text-[11px] text-[#4b5563]">Cebu City — Division of Cebu City</p>
-              <p className="text-[10px] text-[#D4A017] font-semibold tracking-wider uppercase mt-0.5">DepEd &middot; Region VII</p>
             </div>
           </div>
 
           <hr className="border-gray-200 mb-6" />
-
-          <h2 className="text-base font-bold text-gray-800 mb-6">Sign In</h2>
 
           <form className="space-y-5">
             <div>
