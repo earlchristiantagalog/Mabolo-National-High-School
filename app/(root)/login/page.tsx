@@ -6,9 +6,9 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-[#8B1010] via-[#6e0d0d] to-[#5a0b0b] flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-[520px]">
         <div className="bg-white rounded-2xl shadow-2xl p-8 sm:p-10">
-          <div className="flex flex-col items-center gap-3 mb-6 text-center">
-            <Image src="/logo.png" alt="MNHS Logo" width={64} height={64} className="rounded-full shadow-sm" />
-            <div>
+          <div className="flex items-center gap-4 mb-6">
+            <Image src="/logo.png" alt="MNHS Logo" width={64} height={64} className="rounded-full shadow-sm flex-shrink-0" />
+            <div className="text-left">
               <h1 className="text-lg font-bold text-[#8B1010] leading-tight">MABOLO NATIONAL HIGH SCHOOL</h1>
               <p className="text-[11px] text-[#4b5563]">Cebu City — Division of Cebu City</p>
             </div>
