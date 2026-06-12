@@ -6,14 +6,23 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // Generate applicant ID: YEAR + 4-digit sequence
+    // Generate random applicant ID: YEAR + random 4-digit number
     const year = new Date().getFullYear().toString();
-    const [rows] = await query(
-      "SELECT COUNT(*) AS count FROM applicants WHERE applicant_id LIKE ?",
-      [year + "%"]
-    ) as RowDataPacket[];
-    const nextNum = (rows[0]?.count || 0) + 1;
-    const applicantId = year + String(nextNum).padStart(4, "0");
+    let applicantId = "";
+    let retries = 0;
+    while (retries < 10) {
+      const rand = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+      applicantId = year + rand;
+      const [existing] = await query(
+        "SELECT id FROM applicants WHERE applicant_id = ? LIMIT 1",
+        [applicantId]
+      ) as RowDataPacket[];
+      if (!existing || existing.length === 0) break;
+      retries++;
+    }
+    if (retries >= 10) {
+      return NextResponse.json({ error: "Unable to generate unique ID. Please try again." }, { status: 500 });
+    }
 
     const sql = `INSERT INTO applicants SET ?`;
     const values: any = {
