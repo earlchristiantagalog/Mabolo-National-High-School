@@ -42,7 +42,7 @@ export default function LoginPage() {
           <span className="text-white/40">|</span>
           <Link href="/admission/enroll" className="text-white/80 hover:text-white transition-colors">Enroll</Link>
           <span className="text-white/40">|</span>
-          <a href="#" className="text-white/80 hover:text-white transition-colors">Forgot Password</a>
+          <Link href="/forgot-password" className="text-white/80 hover:text-white transition-colors">Forgot Password</Link>
         </div>
       </div>
     </div>
