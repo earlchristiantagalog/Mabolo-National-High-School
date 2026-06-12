@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 const newsArticles = [
   {
@@ -89,6 +92,10 @@ function IconLink() {
 }
 
 export default function NewsPage() {
+  const [page, setPage] = useState(1);
+  const perPage = 5;
+  const totalPages = Math.ceil(newsArticles.length / perPage);
+  const start = (page - 1) * perPage;
   return (
     <div className="min-h-screen bg-white text-[#1a1a1a]">
       <div className="bg-[#1E5631] text-white text-xs">
@@ -160,7 +167,7 @@ export default function NewsPage() {
 
           <div className="grid lg:grid-cols-4 gap-10">
             <div className="lg:col-span-3 space-y-8">
-              {newsArticles.map((article, i) => (
+              {newsArticles.slice(start, start + perPage).map((article, i) => (
                 <article key={i} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                   <div className="grid sm:grid-cols-4">
                     <div className="sm:col-span-1 h-48 sm:h-full relative">
@@ -178,6 +185,38 @@ export default function NewsPage() {
                   </div>
                 </article>
               ))}
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-4">
+                  <button
+                    onClick={() => setPage(page - 1)}
+                    disabled={page === 1}
+                    className="px-4 py-2 text-xs font-medium rounded border border-gray-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors text-gray-600"
+                  >
+                    Previous
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`w-9 h-9 text-xs font-medium rounded transition-colors ${
+                        p === page
+                          ? "bg-[#8B1010] text-white"
+                          : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setPage(page + 1)}
+                    disabled={page === totalPages}
+                    className="px-4 py-2 text-xs font-medium rounded border border-gray-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors text-gray-600"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
 
             <aside className="lg:col-span-1 space-y-8">

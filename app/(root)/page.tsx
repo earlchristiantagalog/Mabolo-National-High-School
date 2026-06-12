@@ -185,7 +185,7 @@ export default function Home() {
                 { label: "About", href: "/about" },
                 { label: "Programs", href: "/programs" },
                 { label: "Admission", href: "/admission" },
-                { label: "Announcements", href: "/announcements" },
+                { label: "Announcements", href: "/news" },
                 { label: "Contact", href: "/contact" },
               ].map((item) => (
                 <a
