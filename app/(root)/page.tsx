@@ -137,16 +137,16 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white text-[#1a1a1a]">
       {/* Top Government Bar */}
-      <div className="bg-[#1E5631] text-white text-xs lg:text-sm">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-1 sm:gap-2 sm:h-9 py-2 sm:py-0">
-          <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-center sm:text-left">
-            <span className="font-medium text-xs sm:text-sm">Republic of the Philippines</span>
-            <span className="text-gray-300 hidden sm:inline">|</span>
-            <span className="text-gray-300 text-xs sm:text-sm">Department of Education</span>
+      <div className="bg-[#1E5631] text-white text-xs">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-9">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">Republic of the Philippines</span>
+            <span className="text-gray-300">|</span>
+            <span className="text-gray-300">Department of Education</span>
           </div>
-          <div className="hidden sm:flex items-center gap-2 lg:gap-4 text-gray-300 text-xs">
-            <span className="hidden lg:inline">DepEd Division of Cebu City</span>
-            <span className="hidden lg:inline">|</span>
+          <div className="hidden sm:flex items-center gap-4 text-gray-300">
+            <span>DepEd Division of Cebu City</span>
+            <span>|</span>
             <span>Region VII — Central Visayas</span>
           </div>
         </div>
@@ -154,54 +154,24 @@ export default function Home() {
 
       {/* Header */}
       <header className="bg-white border-b-4 border-[#8B1010] shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20 lg:h-24">
-            {/* Logo & School Name */}
-            <Link href="/" className="flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0 flex-1 sm:flex-initial">
-              <Image
-                src="/logo.png"
-                alt="MNHS Official Seal"
-                width={48}
-                height={48}
-                className="rounded-full shadow-sm w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 flex-shrink-0"
-                priority
-              />
-              <div className="min-w-0 flex-1 sm:flex-initial">
-                <h1 className="text-xs sm:text-sm lg:text-lg font-bold text-[#8B1010] leading-tight line-clamp-2">
-                  MABOLO NATIONAL HIGH SCHOOL
-                </h1>
-                <p className="text-[9px] sm:text-[10px] lg:text-[11px] text-[#4b5563] tracking-wide hidden sm:block">
-                  Cebu City — Division of Cebu City
-                </p>
-                <p className="text-[8px] sm:text-[9px] lg:text-[10px] text-[#D4A017] font-semibold tracking-wider uppercase mt-0.5 hidden sm:block">
-                  DepEd &middot; Region VII
-                </p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-24">
+            <Link href="/" className="flex items-center gap-4">
+              <Image src="/logo.png" alt="MNHS Official Seal" width={64} height={64} className="rounded-full shadow-sm" priority />
+              <div>
+                <h1 className="text-lg font-bold text-[#8B1010] leading-tight">MABOLO NATIONAL HIGH SCHOOL</h1>
+                <p className="text-[11px] text-[#4b5563] tracking-wide">Cebu City — Division of Cebu City</p>
+                <p className="text-[10px] text-[#D4A017] font-semibold tracking-wider uppercase mt-0.5">DepEd &middot; Region VII</p>
               </div>
             </Link>
-
-            {/* Desktop Nav */}
-            <nav className="hidden lg:flex items-center gap-0.5 ml-auto">
-              {[
-                { label: "About", href: "/about" },
-                { label: "Programs", href: "/programs" },
-                { label: "Admission", href: "/admission" },
-                { label: "Announcements", href: "/news" },
-                { label: "Contact", href: "/contact" },
-              ].map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="px-3 lg:px-4 py-2 text-xs lg:text-sm font-medium text-gray-700 hover:text-[#8B1010] hover:bg-red-50 transition-colors rounded"
-                >
-                  {item.label}
-                </a>
+            <nav className="hidden lg:flex items-center gap-1">
+              {[{ label: "About", href: "/about" }, { label: "Programs", href: "/programs" }, { label: "Admission", href: "/admission" }, { label: "Announcements", href: "/news" }, { label: "Contact", href: "/contact" }].map((item) => (
+                <Link key={item.href} href={item.href} className="px-4 py-2 text-sm font-medium transition-colors rounded text-gray-700 hover:text-[#8B1010] hover:bg-red-50">{item.label}</Link>
               ))}
               <Link href="/login" className="ml-3 px-5 py-2 text-xs lg:text-sm font-medium bg-[#8B1010] text-white hover:bg-[#6e0d0d] transition-colors rounded">Login</Link>
             </nav>
-
-            {/* Mobile Toggle */}
-            <button className="lg:hidden text-[#8B1010] p-2 ml-auto" aria-label="Toggle menu">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+            <button className="lg:hidden text-[#8B1010] p-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
             </button>
           </div>
         </div>
