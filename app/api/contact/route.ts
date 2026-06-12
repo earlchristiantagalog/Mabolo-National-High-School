@@ -1,23 +1,17 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { query } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
-    if (!supabase) {
-      return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
-    }
     const body = await request.json();
 
-    const { error } = await supabase
-      .from("contact_messages")
-      .insert([body]);
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
+    await query(
+      "INSERT INTO contact_messages (full_name, email, subject, message) VALUES (?, ?, ?, ?)",
+      [body.full_name, body.email, body.subject, body.message]
+    );
 
     return NextResponse.json({ success: true, message: "Message sent successfully." });
-  } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
