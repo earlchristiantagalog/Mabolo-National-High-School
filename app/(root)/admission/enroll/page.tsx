@@ -349,6 +349,8 @@ export default function EnrollPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [studentId, setStudentId] = useState("");
+  const [uploads, setUploads] = useState<Record<number, File>>({});
+  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Set<string>>(new Set());
 
   const steps = [
@@ -936,8 +938,19 @@ export default function EnrollPage() {
                           <div className="flex-1 min-w-0">
                             <span className="text-xs font-medium text-gray-900 block truncate">{req.item}</span>
                             <span className={`text-[10px] ${req.required ? "text-[#8B1010] font-semibold" : "text-gray-400"}`}>{req.required ? "Required" : "Optional"}</span>
+                            {uploads[i] && <p className="text-[10px] text-[#1E5631] font-medium truncate mt-0.5">{uploads[i].name}</p>}
                           </div>
-                          <button type="button" className="px-3 py-1.5 text-[11px] font-medium text-[#8B1010] border border-[#8B1010]/30 rounded-lg hover:bg-[#8B1010]/5 transition-colors flex-shrink-0">Upload</button>
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            ref={(el) => { fileInputRefs.current[i] = el; }}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) setUploads((prev) => ({ ...prev, [i]: file }));
+                            }}
+                            className="hidden"
+                          />
+                          <button type="button" onClick={() => fileInputRefs.current[i]?.click()} className="px-3 py-1.5 text-[11px] font-medium text-[#8B1010] border border-[#8B1010]/30 rounded-lg hover:bg-[#8B1010]/5 transition-colors flex-shrink-0">{uploads[i] ? "Change" : "Upload"}</button>
                         </div>
                       ))}
                     </div>
@@ -1009,9 +1022,8 @@ export default function EnrollPage() {
                 </button>
               ) : (
                 <button type="button" onClick={handleSubmit} disabled={!formData.declaration || submitting} className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-[#1E5631] hover:bg-green-800 rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed">
-                  {submitting ? "Submitting..." : "Submit Enrollment"}
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  Submit Enrollment
+                  {submitting ? "Submitting..." : "Submit Enrollment"}
                 </button>
               )}
             </div>
