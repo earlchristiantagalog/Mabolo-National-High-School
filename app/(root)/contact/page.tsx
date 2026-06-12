@@ -88,6 +88,27 @@ function CustomSelect({ label, value, onChange, options, required, placeholder }
 export default function ContactPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [subject, setSubject] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !email || !subject || !message) return;
+    setSending(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full_name: name, email, subject, message }),
+      });
+      const result = await res.json();
+      if (result.success) { setSent(true); setName(""); setEmail(""); setSubject(""); setMessage(""); }
+    } catch { alert("Failed to send. Please try again."); }
+    finally { setSending(false); }
+  };
 
   const subjectOptions = [
     { value: "inquiry", label: "General Inquiry" },
@@ -217,15 +238,18 @@ export default function ContactPage() {
             <div className="lg:col-span-2">
               <div className="bg-[#f8f9fa] border border-gray-200 rounded-lg p-8">
                 <h4 className="text-xl font-bold text-[#8B1010] mb-6">Send Us a Message</h4>
-                <form className="space-y-5">
+                {sent ? (
+                  <div className="text-center py-8"><div className="w-16 h-16 bg-[#1E5631]/10 rounded-full flex items-center justify-center mx-auto mb-4"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1E5631" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><p className="text-base font-bold text-[#1E5631] mb-1">Message Sent!</p><p className="text-xs text-gray-500">We&apos;ll get back to you as soon as possible.</p></div>
+                ) : (
+                <form onSubmit={handleContactSubmit} className="space-y-5">
                   <div className="grid sm:grid-cols-2 gap-5">
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Full Name <span className="text-[#8B1010]">*</span></label>
-                      <input type="text" placeholder="Enter your full name" className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all bg-white" />
+                      <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your full name" className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all bg-white" />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Email Address <span className="text-[#8B1010]">*</span></label>
-                      <input type="email" placeholder="Enter your email address" className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all bg-white" />
+                      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email address" className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all bg-white" />
                     </div>
                   </div>
                   <div>
@@ -233,10 +257,11 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Message <span className="text-[#8B1010]">*</span></label>
-                    <textarea rows={5} placeholder="Type your message here..." className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all bg-white resize-y" />
+                    <textarea rows={5} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Type your message here..." className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all bg-white resize-y" />
                   </div>
-                  <button type="submit" className="w-full bg-[#8B1010] hover:bg-[#6e0d0d] text-white font-semibold py-3 px-6 text-sm rounded-xl transition-colors">Send Message</button>
+                  <button type="submit" disabled={sending} className="w-full bg-[#8B1010] hover:bg-[#6e0d0d] text-white font-semibold py-3 px-6 text-sm rounded-xl transition-colors disabled:opacity-50">{sending ? "Sending..." : "Send Message"}</button>
                 </form>
+                )}
               </div>
             </div>
           </div>

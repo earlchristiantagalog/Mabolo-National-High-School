@@ -347,6 +347,8 @@ export default function EnrollPage() {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [studentId, setStudentId] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Set<string>>(new Set());
 
   const steps = [
@@ -438,8 +440,29 @@ export default function EnrollPage() {
   const goNext = () => { if (currentStep < totalSteps) goToStep(currentStep + 1); };
   const goPrev = () => { if (currentStep > 1) { setCurrentStep(currentStep - 1); window.scrollTo({ top: 0, behavior: "smooth" }); } };
 
-  const handleSubmit = () => {
-    if (validateStep(5)) { setSubmitted(true); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  const handleSubmit = async () => {
+    if (!validateStep(5)) return;
+    setSubmitting(true);
+    try {
+      const payload = { ...formData, schoolYear };
+      const res = await fetch("/api/enroll", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setStudentId(result.studentId);
+        setSubmitted(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        alert("Submission failed: " + result.error);
+      }
+    } catch {
+      alert("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const isSHS = formData.gradeLevel === "11" || formData.gradeLevel === "12";
@@ -483,8 +506,12 @@ export default function EnrollPage() {
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1E5631" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
           <h2 className="text-2xl font-bold text-[#8B1010] mb-3">Enrollment Submitted!</h2>
+          <div className="bg-[#f8f9fa] border border-gray-200 rounded-xl p-4 mb-6 inline-block">
+            <p className="text-xs text-gray-500 mb-1">Your Student ID</p>
+            <p className="text-2xl font-bold text-[#8B1010] tracking-wider">{studentId}</p>
+          </div>
           <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-            Thank you, <strong>{formData.firstName} {formData.lastName}</strong>. Your enrollment application has been received. The registrar will review your submission and contact you within 3–5 working days.
+            Thank you, <strong>{formData.firstName} {formData.lastName}</strong>. Your enrollment application has been received. Please save your Student ID for future transactions. The registrar will review your submission and contact you within 3–5 working days.
           </p>
           <Link href="/" className="inline-block bg-[#8B1010] hover:bg-[#b81c1c] text-white font-semibold px-8 py-3 text-sm rounded-xl transition-colors">Back to Home</Link>
         </div>
@@ -981,7 +1008,8 @@ export default function EnrollPage() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
               ) : (
-                <button type="button" onClick={handleSubmit} disabled={!formData.declaration} className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-[#1E5631] hover:bg-green-800 rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed">
+                <button type="button" onClick={handleSubmit} disabled={!formData.declaration || submitting} className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-[#1E5631] hover:bg-green-800 rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed">
+                  {submitting ? "Submitting..." : "Submit Enrollment"}
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                   Submit Enrollment
                 </button>
