@@ -196,6 +196,7 @@ export default function Home() {
                   {item.label}
                 </a>
               ))}
+              <Link href="/login" className="ml-3 px-5 py-2 text-xs lg:text-sm font-medium bg-[#8B1010] text-white hover:bg-[#6e0d0d] transition-colors rounded">Login</Link>
             </nav>
 
             {/* Mobile Toggle */}
