@@ -3,10 +3,10 @@
 CREATE DATABASE IF NOT EXISTS mnhs;
 USE mnhs;
 
--- Enrollments table with auto-generated student ID
-CREATE TABLE IF NOT EXISTS enrollments (
+-- Applicants table (stores enrollment submissions before approval)
+CREATE TABLE IF NOT EXISTS applicants (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  student_id VARCHAR(10) NOT NULL UNIQUE,
+  applicant_id VARCHAR(10) NOT NULL UNIQUE COMMENT 'Format: YEARXXXX (e.g. 20260001)',
   enrollment_type VARCHAR(20) NOT NULL,
   grade_level VARCHAR(2) NOT NULL,
   strand VARCHAR(50) DEFAULT NULL,
@@ -49,10 +49,28 @@ CREATE TABLE IF NOT EXISTS enrollments (
   mother_contact VARCHAR(50) DEFAULT NULL,
   guardian_name VARCHAR(200) DEFAULT NULL,
   guardian_contact VARCHAR(50) DEFAULT NULL,
-  status VARCHAR(20) DEFAULT 'pending',
+  status VARCHAR(20) DEFAULT 'pending' COMMENT 'pending, approved, rejected',
   school_year VARCHAR(9) NOT NULL,
   submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Students table (created when applicant is approved — used for login)
+CREATE TABLE IF NOT EXISTS students (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id VARCHAR(10) NOT NULL UNIQUE COMMENT 'Same as applicant_id from applicants table',
+  applicant_id INT NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  email VARCHAR(255) DEFAULT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  middle_name VARCHAR(100) DEFAULT NULL,
+  grade_level VARCHAR(2) NOT NULL,
+  strand VARCHAR(50) DEFAULT NULL,
+  status VARCHAR(20) DEFAULT 'active' COMMENT 'active, inactive, graduated',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (applicant_id) REFERENCES applicants(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Contact messages table
@@ -66,6 +84,8 @@ CREATE TABLE IF NOT EXISTS contact_messages (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Indexes
-CREATE INDEX idx_student_id ON enrollments(student_id);
-CREATE INDEX idx_status ON enrollments(status);
-CREATE INDEX idx_school_year ON enrollments(school_year);
+CREATE INDEX idx_applicant_id ON applicants(applicant_id);
+CREATE INDEX idx_applicant_status ON applicants(status);
+CREATE INDEX idx_applicant_school_year ON applicants(school_year);
+CREATE INDEX idx_student_id ON students(student_id);
+CREATE INDEX idx_student_status ON students(status);

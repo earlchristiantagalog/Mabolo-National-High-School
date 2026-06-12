@@ -6,19 +6,18 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // Generate student ID: YEAR + 4-digit sequence
+    // Generate applicant ID: YEAR + 4-digit sequence
     const year = new Date().getFullYear().toString();
     const [rows] = await query(
-      "SELECT COUNT(*) AS count FROM enrollments WHERE student_id LIKE ?",
+      "SELECT COUNT(*) AS count FROM applicants WHERE applicant_id LIKE ?",
       [year + "%"]
     ) as RowDataPacket[];
     const nextNum = (rows[0]?.count || 0) + 1;
-    const studentId = year + String(nextNum).padStart(4, "0");
+    const applicantId = year + String(nextNum).padStart(4, "0");
 
-    // Map formData to DB columns
-    const sql = `INSERT INTO enrollments SET ?`;
+    const sql = `INSERT INTO applicants SET ?`;
     const values: any = {
-      student_id: studentId,
+      applicant_id: applicantId,
       enrollment_type: body.enrollmentType,
       grade_level: body.gradeLevel,
       strand: body.strand || null,
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      studentId,
+      studentId: applicantId,
       message: "Enrollment submitted successfully.",
     });
   } catch (error: any) {
