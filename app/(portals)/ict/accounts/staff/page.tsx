@@ -30,7 +30,7 @@ function CustomSelect({ label, value, onChange, options, placeholder }: {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-2.5 text-sm border-2 rounded-xl transition-all duration-200 bg-white text-left border-gray-200 hover:border-gray-300"
+        className="w-full flex items-center justify-between px-4 py-2.5 text-sm border-2 rounded-xl transition-all duration-200 bg-white text-left border-gray-200 hover:border-gray-200"
       >
         <span className={value ? "text-gray-900 font-medium" : "text-gray-400"}>
           {value ? selected?.label : placeholder || "Select option"}
