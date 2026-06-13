@@ -61,6 +61,8 @@ export default function ICTLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [accountsOpen, setAccountsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   useEffect(() => {
     const hasActiveChild = NAV_ITEMS.some((item) =>
@@ -165,16 +167,6 @@ export default function ICTLayout({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-
-        {/* Sidebar footer */}
-        <div className="px-3 py-3 border-t border-white/10">
-          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-white/10 transition-all">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" />
-            </svg>
-            Logout
-          </button>
-        </div>
       </aside>
 
       {/* Main content */}
@@ -194,21 +186,86 @@ export default function ICTLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex-1" />
 
-          <div className="flex items-center gap-3">
-            <button className="relative p-2 text-gray-500 hover:text-[#8B1010] transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-              </svg>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#D4A017] rounded-full" />
-            </button>
-            <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
-              <div className="w-8 h-8 rounded-full bg-[#8B1010] flex items-center justify-center text-white text-xs font-bold">
-                AD
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-sm font-semibold text-gray-700 leading-tight">Admin</p>
-                <p className="text-[10px] text-gray-400">ICT Department</p>
-              </div>
+          <div className="flex items-center gap-1 sm:gap-3">
+            <div className="relative">
+              <button
+                onClick={() => setNotifOpen(!notifOpen)}
+                className="relative p-2 text-gray-500 hover:text-[#8B1010] transition-colors cursor-pointer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                </svg>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#D4A017] rounded-full" />
+              </button>
+              {notifOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
+                  <div className="fixed inset-x-4 top-16 sm:inset-x-auto sm:absolute sm:right-0 sm:top-full sm:mt-2 sm:w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm font-semibold text-gray-700">Notifications</p>
+                    </div>
+                    <div className="max-h-72 overflow-y-auto">
+                      {[
+                        { title: "New enrollment submitted", desc: "Juan Dela Cruz submitted admission form", time: "2 mins ago", unread: true },
+                        { title: "Ticket #1024 resolved", desc: "Network issue in room 203 has been resolved", time: "1 hour ago", unread: true },
+                        { title: "New account created", desc: "Teacher account for Maria Santos was created", time: "3 hours ago", unread: false },
+                        { title: "System update", desc: "Website maintenance scheduled tonight at 11PM", time: "5 hours ago", unread: false },
+                      ].map((n, i) => (
+                        <div key={i} className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${n.unread ? "bg-[#8B1010]/5" : ""}`}>
+                          <div className="flex items-start gap-2">
+                            <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${n.unread ? "bg-[#8B1010]" : "bg-transparent"}`} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-700">{n.title}</p>
+                              <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.desc}</p>
+                              <p className="text-[10px] text-gray-400 mt-1">{n.time}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="px-4 py-2.5 border-t border-gray-100 text-center">
+                      <button className="text-xs font-medium text-[#8B1010] hover:underline cursor-pointer">View All</button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="relative">
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="flex items-center gap-2 pl-3 border-l border-gray-200 cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-full bg-[#8B1010] flex items-center justify-center text-white text-xs font-bold">
+                  AD
+                </div>
+                <div className="hidden sm:block text-left">
+                  <p className="text-sm font-semibold text-gray-700 leading-tight">Admin</p>
+                  <p className="text-[10px] text-gray-400">ICT Department</p>
+                </div>
+              </button>
+              {profileOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+                  <div className="fixed inset-x-4 top-16 sm:inset-x-auto sm:absolute sm:right-0 sm:top-full sm:mt-2 sm:w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm font-semibold text-gray-700">Admin</p>
+                      <p className="text-xs text-gray-400">admin@mnhs.edu.ph</p>
+                    </div>
+                    <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                      </svg>
+                      Profile
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors border-t border-gray-100 cursor-pointer">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" />
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </header>

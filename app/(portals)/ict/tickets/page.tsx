@@ -88,6 +88,7 @@ export default function ICTTickets() {
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [modalPriority, setModalPriority] = useState("");
 
   const filtered = MOCK_TICKETS.filter(
     (t) =>
@@ -123,6 +124,21 @@ export default function ICTTickets() {
             Create Ticket
           </button>
         </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">
+        {[
+          { label: "Open", count: MOCK_TICKETS.filter((t) => t.status === "Open").length, color: "#3b82f6" },
+          { label: "In Progress", count: MOCK_TICKETS.filter((t) => t.status === "In Progress").length, color: "#b8960e" },
+          { label: "Resolved", count: MOCK_TICKETS.filter((t) => t.status === "Resolved").length, color: "#1E5631" },
+          { label: "High Priority", count: MOCK_TICKETS.filter((t) => t.priority === "High").length, color: "#8B1010" },
+        ].map((item) => (
+          <div key={item.label} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 text-center">
+            <p className="text-xl sm:text-2xl font-bold" style={{ color: item.color }}>{item.count}</p>
+            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{item.label}</p>
+          </div>
+        ))}
       </div>
 
       {/* Search + Filter */}
@@ -215,21 +231,6 @@ export default function ICTTickets() {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-4">
-        {[
-          { label: "Open", count: MOCK_TICKETS.filter((t) => t.status === "Open").length, color: "text-blue-600" },
-          { label: "In Progress", count: MOCK_TICKETS.filter((t) => t.status === "In Progress").length, color: "text-[#b8960e]" },
-          { label: "Resolved", count: MOCK_TICKETS.filter((t) => t.status === "Resolved").length, color: "text-[#1E5631]" },
-          { label: "High Priority", count: MOCK_TICKETS.filter((t) => t.priority === "High").length, color: "text-[#8B1010]" },
-        ].map((item) => (
-          <div key={item.label} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 text-center">
-            <p className="text-xl sm:text-2xl font-bold" style={{ color: item.color.replace("text-", "#") }}>{item.count}</p>
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{item.label}</p>
-          </div>
-        ))}
-      </div>
-
       {/* Create Ticket Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ animation: "fadeIn 0.2s ease-out" }}>
@@ -254,12 +255,17 @@ export default function ICTTickets() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Priority</label>
-                  <select className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all bg-white">
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
+                  <CustomSelect
+                    label="Priority"
+                    value={modalPriority}
+                    onChange={setModalPriority}
+                    options={[
+                      { value: "Low", label: "Low" },
+                      { value: "Medium", label: "Medium" },
+                      { value: "High", label: "High" },
+                    ]}
+                    placeholder="Select priority"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Assigned To</label>
