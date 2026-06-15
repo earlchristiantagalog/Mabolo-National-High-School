@@ -348,6 +348,7 @@ export default function EnrollPage() {
 
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [closing, setClosing] = useState(true);
   const [studentId, setStudentId] = useState("");
   const [uploads, setUploads] = useState<Record<number, File>>({});
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -490,6 +491,30 @@ export default function EnrollPage() {
         return [];
     }
   })();
+
+  if (closing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#8B1010] via-[#6e0d0d] to-[#5a0b0b] flex items-center justify-center px-4">
+        <div className="max-w-lg w-full text-center">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10">
+            <div className="w-20 h-20 bg-[#8B1010]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#8B1010" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <h2 className="text-2xl font-bold text-[#8B1010] mb-3">Enrollment is Closed</h2>
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5 inline-block">
+              <p className="text-xs text-gray-500 mb-1">School Year</p>
+              <p className="text-lg font-bold text-[#8B1010]">{schoolYear}</p>
+            </div>
+            <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+              The enrollment period for School Year <strong>{schoolYear}</strong> has ended. Please wait for the next enrollment period or contact the registrar&apos;s office for inquiries.
+            </p>
+            <p className="text-gray-500 text-xs mb-6">For questions, please visit the registrar&apos;s office or contact us at the numbers listed on our website.</p>
+            <Link href="/" className="inline-block bg-[#8B1010] hover:bg-[#b81c1c] text-white font-semibold px-8 py-3 text-sm rounded-xl transition-colors">Back to Home</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (
