@@ -10,17 +10,16 @@ async function generateReferenceNumber(): Promise<string> {
   return `${year}${random}`;
 }
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.SMTP_PORT || "587"),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
 async function sendEnrollmentEmail(email: string, refNo: string, firstName: string, enrollmentType: string) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: parseInt(process.env.SMTP_PORT || "587"),
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
   const requirementsList: Record<string, string[]> = {
     new: ["PSA Birth Certificate", "Form 138 (Report Card)", "Good Moral Certificate", "2x2 ID Picture (2 copies)"],
     old: ["Form 138 (Report Card)", "Good Moral Certificate", "2x2 ID Picture (1 copy)"],
@@ -162,10 +161,15 @@ export async function POST(req: NextRequest) {
 
     if (email) {
       try {
+        console.log("Sending email to:", email);
+        console.log("SMTP config:", { host: process.env.SMTP_HOST, port: process.env.SMTP_PORT, user: process.env.SMTP_USER });
         await sendEnrollmentEmail(email, referenceNumber, get("firstName") || "Student", get("enrollmentType") || "new");
+        console.log("Email sent successfully");
       } catch (emailError) {
         console.error("Email send failed:", emailError);
       }
+    } else {
+      console.log("No email provided, skipping email send");
     }
 
     let savedFiles: Record<string, string> = {};
