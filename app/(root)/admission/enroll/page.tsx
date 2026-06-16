@@ -308,6 +308,7 @@ export default function EnrollPage() {
     firstName: "",
     middleName: "",
     extensionName: "",
+    email: "",
     birthdate: "",
     placeOfBirthCity: "",
     placeOfBirthProvince: "",
@@ -349,7 +350,7 @@ export default function EnrollPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [closing, setClosing] = useState(true);
-  const [studentId, setStudentId] = useState("");
+  const [referenceNumber, setReferenceNumber] = useState("");
   const [uploads, setUploads] = useState<Record<number, File>>({});
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Set<string>>(new Set());
@@ -411,7 +412,7 @@ export default function EnrollPage() {
   const getStepFields = (step: number): string[] => {
     switch (step) {
       case 1: return ["enrollmentType", "gradeLevel", ...(isSHS ? ["strand"] : []), ...(isSHS && formData.strand === "TVL" ? ["tvlSpecialization"] : [])];
-      case 2: return ["lastName", "firstName", "birthdate", "sex", "placeOfBirthCity"];
+      case 2: return ["lastName", "firstName", "email", "birthdate", "sex", "placeOfBirthCity"];
       case 3: return ["currentAddress", "currentBarangay", "currentCity", "currentProvince", "currentZipCode"];
       case 4: return [];
       case 5: return formData.declaration ? [] : ["declaration"];
@@ -447,15 +448,26 @@ export default function EnrollPage() {
     if (!validateStep(5)) return;
     setSubmitting(true);
     try {
-      const payload = { ...formData, schoolYear };
+      const fd = new FormData();
+      fd.append("schoolYear", schoolYear);
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === "declaration") return;
+        if (Array.isArray(value)) {
+          fd.append(key, JSON.stringify(value));
+        } else if (value !== null && value !== undefined) {
+          fd.append(key, String(value));
+        }
+      });
+      Object.entries(uploads).forEach(([index, file]) => {
+        fd.append(`requirement_${index}`, file);
+      });
       const res = await fetch("/api/enroll", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: fd,
       });
       const result = await res.json();
       if (result.success) {
-        setStudentId(result.studentId);
+        setReferenceNumber(result.referenceNumber);
         setSubmitted(true);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
@@ -492,29 +504,29 @@ export default function EnrollPage() {
     }
   })();
 
-  if (closing) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#8B1010] via-[#6e0d0d] to-[#5a0b0b] flex items-center justify-center px-4">
-        <div className="max-w-lg w-full text-center">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10">
-            <div className="w-20 h-20 bg-[#8B1010]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#8B1010" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-            </div>
-            <h2 className="text-2xl font-bold text-[#8B1010] mb-3">Enrollment is Closed</h2>
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5 inline-block">
-              <p className="text-xs text-gray-500 mb-1">School Year</p>
-              <p className="text-lg font-bold text-[#8B1010]">{schoolYear}</p>
-            </div>
-            <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-              The enrollment period for School Year <strong>{schoolYear}</strong> has ended. Please wait for the next enrollment period or contact the registrar&apos;s office for inquiries.
-            </p>
-            <p className="text-gray-500 text-xs mb-6">For questions, please visit the registrar&apos;s office or contact us at the numbers listed on our website.</p>
-            <Link href="/" className="inline-block bg-[#8B1010] hover:bg-[#b81c1c] text-white font-semibold px-8 py-3 text-sm rounded-xl transition-colors">Back to Home</Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // if (closing) {
+  //   return (
+  //     <div className="min-h-screen bg-gradient-to-br from-[#8B1010] via-[#6e0d0d] to-[#5a0b0b] flex items-center justify-center px-4">
+  //       <div className="max-w-lg w-full text-center">
+  //         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10">
+  //           <div className="w-20 h-20 bg-[#8B1010]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+  //             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#8B1010" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+  //           </div>
+  //           <h2 className="text-2xl font-bold text-[#8B1010] mb-3">Enrollment is Closed</h2>
+  //           <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5 inline-block">
+  //             <p className="text-xs text-gray-500 mb-1">School Year</p>
+  //             <p className="text-lg font-bold text-[#8B1010]">{schoolYear}</p>
+  //           </div>
+  //           <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+  //             The enrollment period for School Year <strong>{schoolYear}</strong> has ended. Please wait for the next enrollment period or contact the registrar&apos;s office for inquiries.
+  //           </p>
+  //           <p className="text-gray-500 text-xs mb-6">For questions, please visit the registrar&apos;s office or contact us at the numbers listed on our website.</p>
+  //           <Link href="/" className="inline-block bg-[#8B1010] hover:bg-[#b81c1c] text-white font-semibold px-8 py-3 text-sm rounded-xl transition-colors">Back to Home</Link>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   if (submitted) {
     return (
@@ -534,11 +546,11 @@ export default function EnrollPage() {
           </div>
           <h2 className="text-2xl font-bold text-[#8B1010] mb-3">Enrollment Submitted!</h2>
           <div className="bg-[#f8f9fa] border border-gray-200 rounded-xl p-4 mb-6 inline-block">
-            <p className="text-xs text-gray-500 mb-1">Your Student ID</p>
-            <p className="text-2xl font-bold text-[#8B1010] tracking-wider">{studentId}</p>
+            <p className="text-xs text-gray-500 mb-1">Your Reference Number</p>
+            <p className="text-2xl font-bold text-[#8B1010] tracking-wider">{referenceNumber}</p>
           </div>
           <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-            Thank you, <strong>{formData.firstName} {formData.lastName}</strong>. Your enrollment application has been received. Please save your Student ID for future transactions. The registrar will review your submission and contact you within 3–5 working days.
+            Thank you, <strong>{formData.firstName} {formData.lastName}</strong>. Your enrollment application has been received. A confirmation email with the requirements and procedures has been sent to <strong>{formData.email}</strong>. Please save your reference number for future transactions. The registrar will review your submission and contact you within 3–5 working days.
           </p>
           <Link href="/" className="inline-block bg-[#8B1010] hover:bg-[#b81c1c] text-white font-semibold px-8 py-3 text-sm rounded-xl transition-colors">Back to Home</Link>
         </div>
@@ -852,6 +864,10 @@ export default function EnrollPage() {
                   <div className="grid sm:grid-cols-2 gap-4 mb-5">
                     <TextInput label="Middle Name" name="middleName" value={formData.middleName} onChange={handleChange} />
                     <TextInput label="Mother Tongue" name="motherTongue" value={formData.motherTongue} onChange={handleChange} placeholder="e.g. Cebuano" />
+                  </div>
+
+                  <div className="mb-5">
+                    <TextInput label="Email Address" name="email" value={formData.email} onChange={handleChange} required hasError={fieldErrors.has("email")} placeholder="e.g. juan.delacruz@gmail.com" type="email" />
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-4 mb-5">
