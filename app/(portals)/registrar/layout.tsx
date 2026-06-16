@@ -91,6 +91,11 @@ export default function RegistrarLayout({ children }: { children: React.ReactNod
             );
           })}
         </nav>
+
+        <div className="px-5 py-4 border-t border-white/10">
+          <p className="text-[11px] text-gray-500">Version 1.1</p>
+          <p className="text-[10px] text-gray-600 mt-1">MNHS Registrar Portal</p>
+        </div>
       </aside>
 
       {/* Main content */}

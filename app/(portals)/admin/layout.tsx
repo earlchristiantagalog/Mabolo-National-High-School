@@ -3,12 +3,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const NAV_ITEMS = [
   {
     label: "Dashboard",
-    href: "/ict",
+    href: "/admin",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect width="7" height="9" x="3" y="3" rx="1" />
@@ -19,7 +19,8 @@ const NAV_ITEMS = [
     ),
   },
   {
-    label: "Accounts",
+    label: "Assigned Section",
+    href: "/admin/assigned-section",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -28,52 +29,27 @@ const NAV_ITEMS = [
         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
       </svg>
     ),
-    children: [
-      { label: "Students", href: "/ict/accounts/students" },
-      { label: "Teachers", href: "/ict/accounts/teachers" },
-      { label: "Staff", href: "/ict/accounts/staff" },
-      { label: "Admin", href: "/ict/accounts/admin" },
-    ],
   },
   {
-    label: "Tickets",
-    href: "/ict/tickets",
+    label: "Announcements",
+    href: "/admin/announcements",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
-        <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Website Settings",
-    href: "/ict/settings",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3" />
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        <path d="m3 11 18-5v12L3 13v-2z" />
+        <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
       </svg>
     ),
   },
 ];
 
-export default function ICTLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [accountsOpen, setAccountsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
 
-  useEffect(() => {
-    const hasActiveChild = NAV_ITEMS.some((item) =>
-      item.children?.some((child) => pathname.startsWith(child.href))
-    );
-    if (hasActiveChild) setAccountsOpen(true);
-  }, [pathname]);
-
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
@@ -84,72 +60,19 @@ export default function ICTLayout({ children }: { children: React.ReactNode }) {
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Sidebar header */}
         <div className="flex items-center gap-3 px-5 h-16 flex-shrink-0">
           <div className="relative w-10 h-10 rounded-full flex-shrink-0 overflow-hidden">
             <Image src="/logo.png" alt="MNHS Logo" fill className="object-contain" />
           </div>
           <div>
-            <p className="text-sm font-bold text-white leading-tight">ICT Portal</p>
+            <p className="text-sm font-bold text-white leading-tight">Admin Portal</p>
             <p className="text-[10px] text-gray-400">Mabolo NHS</p>
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
-            if (item.children) {
-              const isParentActive = item.children.some((child) => pathname.startsWith(child.href));
-              return (
-                <div key={item.label}>
-                  <button
-                    onClick={() => setAccountsOpen(!accountsOpen)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                      isParentActive
-                        ? "text-white font-bold"
-                        : "text-gray-300 hover:text-white hover:bg-white/10"
-                    }`}
-                  >
-                    <span className="flex-shrink-0">{item.icon}</span>
-                    {item.label}
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className={`ml-auto transition-transform duration-200 ${accountsOpen ? "rotate-180" : ""}`}
-                    >
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-                  {accountsOpen && (
-                    <div className="ml-4 mt-1 space-y-1">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          onClick={() => setSidebarOpen(false)}
-                          className={`block px-3 py-2 rounded-lg text-sm transition-all ${
-                            pathname.startsWith(child.href)
-                              ? "bg-[#8B1010] text-white font-semibold"
-                              : "text-gray-400 hover:text-white hover:bg-white/5"
-                          }`}
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-
-            const isActive = pathname === item.href || (item.href !== "/ict" && pathname.startsWith(item.href));
+            const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
             return (
               <Link
                 key={item.label}
@@ -170,7 +93,7 @@ export default function ICTLayout({ children }: { children: React.ReactNode }) {
 
         <div className="px-5 py-4 border-t border-white/10">
           <p className="text-[11px] text-gray-500">Version 1.1</p>
-          <p className="text-[10px] text-gray-600 mt-1">MNHS ICT Portal</p>
+          <p className="text-[10px] text-gray-600 mt-1">MNHS Admin Portal</p>
         </div>
       </aside>
 
@@ -212,9 +135,8 @@ export default function ICTLayout({ children }: { children: React.ReactNode }) {
                     <div className="max-h-72 overflow-y-auto">
                       {[
                         { title: "New enrollment submitted", desc: "Juan Dela Cruz submitted admission form", time: "2 mins ago", unread: true },
-                        { title: "Ticket #1024 resolved", desc: "Network issue in room 203 has been resolved", time: "1 hour ago", unread: true },
-                        { title: "New account created", desc: "Teacher account for Maria Santos was created", time: "3 hours ago", unread: false },
-                        { title: "System update", desc: "Website maintenance scheduled tonight at 11PM", time: "5 hours ago", unread: false },
+                        { title: "Announcement published", desc: "Enrollment period has been extended", time: "1 hour ago", unread: true },
+                        { title: "Section updated", desc: "Grade 7 - Diamond adviser changed", time: "3 hours ago", unread: false },
                       ].map((n, i) => (
                         <div key={i} className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${n.unread ? "bg-[#8B1010]/5" : ""}`}>
                           <div className="flex items-start gap-2">
@@ -245,7 +167,7 @@ export default function ICTLayout({ children }: { children: React.ReactNode }) {
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-sm font-semibold text-gray-700 leading-tight">Admin</p>
-                  <p className="text-[10px] text-gray-400">ICT Department</p>
+                  <p className="text-[10px] text-gray-400">Administrator</p>
                 </div>
               </button>
               {profileOpen && (
