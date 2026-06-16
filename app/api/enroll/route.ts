@@ -83,81 +83,81 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const referenceNumber = await generateReferenceNumber();
 
-    const get = (key: string) => formData.get(key) as string || null;
+    const get = (key: string): string | null => {
+      const val = formData.get(key);
+      if (val === null || val === undefined || val instanceof File) return null;
+      const str = String(val).trim();
+      return str === "" ? null : str;
+    };
 
     const email = get("email");
 
+    const values = [
+      referenceNumber,
+      get("schoolYear"),
+      get("enrollmentType"),
+      get("gradeLevel"),
+      get("strand"),
+      get("tvlSpecialization"),
+      get("lrn"),
+      get("psaBirthCert"),
+      get("lastName"),
+      get("firstName"),
+      get("middleName"),
+      get("extensionName"),
+      email,
+      get("birthdate"),
+      get("placeOfBirthCity"),
+      get("placeOfBirthProvince"),
+      get("motherTongue"),
+      get("sex"),
+      get("withLRN"),
+      get("returningLearner"),
+      get("ipCommunity"),
+      get("ipSpecify"),
+      get("fourPsBeneficiary"),
+      get("fourPsHouseholdId"),
+      get("disability"),
+      get("disabilityType"),
+      get("currentAddress"),
+      get("currentCity"),
+      get("currentProvince"),
+      get("currentBarangay"),
+      get("currentZipCode"),
+      get("currentCountry"),
+      get("sameAddress"),
+      get("permanentAddress"),
+      get("permanentCity"),
+      get("permanentProvince"),
+      get("permanentBarangay"),
+      get("permanentZipCode"),
+      get("permanentCountry"),
+      get("fatherName"),
+      get("fatherContact"),
+      get("motherMaidenName"),
+      get("motherContact"),
+      get("guardianName"),
+      get("guardianContact"),
+    ];
+
+    const cols = [
+      "reference_number", "school_year", "enrollment_type", "grade_level", "strand", "tvl_specialization",
+      "lrn", "psa_birth_cert", "last_name", "first_name", "middle_name", "extension_name",
+      "email", "birthdate", "place_of_birth_city", "place_of_birth_province", "mother_tongue", "sex",
+      "with_lrn", "returning_learner", "ip_community", "ip_specify",
+      "four_ps_beneficiary", "four_ps_household_id", "disability", "disability_type",
+      "current_address", "current_city", "current_province", "current_barangay", "current_zip_code", "current_country",
+      "same_address", "permanent_address", "permanent_city", "permanent_province",
+      "permanent_barangay", "permanent_zip_code", "permanent_country",
+      "father_name", "father_contact", "mother_maiden_name", "mother_contact",
+      "guardian_name", "guardian_contact",
+    ];
+
+    const placeholders = cols.map((_, i) => `$${i + 1}`).join(", ");
+
     await query(
-      `INSERT INTO enrollments (
-        reference_number, school_year, enrollment_type, grade_level, strand, tvl_specialization,
-        lrn, psa_birth_cert, last_name, first_name, middle_name, extension_name,
-        email, birthdate, place_of_birth_city, place_of_birth_province, mother_tongue, sex,
-        with_lrn, returning_learner, ip_community, ip_specify,
-        four_ps_beneficiary, four_ps_household_id, disability, disability_type,
-        current_address, current_city, current_province, current_barangay, current_zip_code, current_country,
-        same_address, permanent_address, permanent_city, permanent_province,
-        permanent_barangay, permanent_zip_code, permanent_country,
-        father_name, father_contact, mother_maiden_name, mother_contact,
-        guardian_name, guardian_contact
-      ) VALUES (
-        ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?,
-        ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?,
-        ?, ?, ?,
-        ?, ?, ?, ?,
-        ?, ?
-      )`,
-      [
-        referenceNumber,
-        get("schoolYear"),
-        get("enrollmentType"),
-        get("gradeLevel"),
-        get("strand"),
-        get("tvlSpecialization"),
-        get("lrn"),
-        get("psaBirthCert"),
-        get("lastName"),
-        get("firstName"),
-        get("middleName"),
-        get("extensionName"),
-        email,
-        get("birthdate"),
-        get("placeOfBirthCity"),
-        get("placeOfBirthProvince"),
-        get("motherTongue"),
-        get("sex"),
-        get("withLRN"),
-        get("returningLearner"),
-        get("ipCommunity"),
-        get("ipSpecify"),
-        get("fourPsBeneficiary"),
-        get("fourPsHouseholdId"),
-        get("disability"),
-        get("disabilityType"),
-        get("currentAddress"),
-        get("currentCity"),
-        get("currentProvince"),
-        get("currentBarangay"),
-        get("currentZipCode"),
-        get("currentCountry"),
-        get("sameAddress"),
-        get("permanentAddress"),
-        get("permanentCity"),
-        get("permanentProvince"),
-        get("permanentBarangay"),
-        get("permanentZipCode"),
-        get("permanentCountry"),
-        get("fatherName"),
-        get("fatherContact"),
-        get("motherMaidenName"),
-        get("motherContact"),
-        get("guardianName"),
-        get("guardianContact"),
-      ]
+      `INSERT INTO enrollments (${cols.join(", ")}) VALUES (${placeholders})`,
+      values
     );
 
     if (email) {
@@ -168,25 +168,29 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "enrollments", referenceNumber);
-    await mkdir(uploadDir, { recursive: true });
-
-    const savedFiles: Record<string, string> = {};
-    for (const [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        const ext = value.name.split(".").pop();
-        const filename = `${key}.${ext}`;
-        const buffer = Buffer.from(await value.arrayBuffer());
-        await writeFile(path.join(uploadDir, filename), buffer);
-        savedFiles[key] = `/uploads/enrollments/${referenceNumber}/${filename}`;
+    let savedFiles: Record<string, string> = {};
+    try {
+      const uploadDir = path.join(process.cwd(), "public", "uploads", "enrollments", referenceNumber);
+      await mkdir(uploadDir, { recursive: true });
+      for (const [key, value] of formData.entries()) {
+        if (value instanceof File && value.size > 0) {
+          const ext = value.name.split(".").pop();
+          const filename = `${key}.${ext}`;
+          const buffer = Buffer.from(await value.arrayBuffer());
+          await writeFile(path.join(uploadDir, filename), buffer);
+          savedFiles[key] = `/uploads/enrollments/${referenceNumber}/${filename}`;
+        }
       }
+    } catch {
+      console.log("File upload skipped (read-only filesystem)");
     }
 
     return NextResponse.json({ success: true, referenceNumber, files: savedFiles });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Internal server error";
     console.error("Enrollment error:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Internal server error" },
+      { success: false, error: message },
       { status: 500 }
     );
   }

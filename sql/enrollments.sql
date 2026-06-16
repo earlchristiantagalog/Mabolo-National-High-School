@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS enrollments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     reference_number VARCHAR(20) NOT NULL UNIQUE,
     school_year VARCHAR(20) NOT NULL,
     enrollment_type VARCHAR(20) NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS enrollments (
     four_ps_beneficiary VARCHAR(5) DEFAULT 'No',
     four_ps_household_id VARCHAR(50) DEFAULT NULL,
     disability VARCHAR(5) DEFAULT 'No',
-    disability_type JSON DEFAULT NULL,
+    disability_type JSONB DEFAULT NULL,
     current_address VARCHAR(255) DEFAULT NULL,
     current_city VARCHAR(100) DEFAULT 'Cebu City',
     current_province VARCHAR(100) DEFAULT 'Cebu',
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS enrollments (
     guardian_name VARCHAR(200) DEFAULT NULL,
     guardian_contact VARCHAR(20) DEFAULT NULL,
     status VARCHAR(20) DEFAULT 'Pending',
-    checked_requirements JSON DEFAULT NULL,
+    checked_requirements JSONB DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
