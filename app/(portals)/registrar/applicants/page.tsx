@@ -76,7 +76,7 @@ interface Enrollment {
   guardian_name: string | null;
   guardian_contact: string | null;
   status: string;
-  checked_requirements: string | null;
+  checked_requirements: Record<string, boolean> | string | null;
   created_at: string;
   updated_at: string;
 }
@@ -137,7 +137,8 @@ export default function ApplicantsPage() {
 
   const handleView = (applicant: Enrollment) => {
     setSelectedApplicant(applicant);
-    const saved = applicant.checked_requirements ? JSON.parse(applicant.checked_requirements) : {};
+    const cr = applicant.checked_requirements;
+    const saved = cr ? (typeof cr === "string" ? JSON.parse(cr) : cr) : {};
     setCheckedRequirements(saved);
     setModalOpen(true);
   };
@@ -162,13 +163,13 @@ export default function ApplicantsPage() {
       setApplicants((prev) =>
         prev.map((a) =>
           a.reference_number === applicant.reference_number
-            ? { ...a, checked_requirements: JSON.stringify(newChecked), status: newStatus }
+            ? { ...a, checked_requirements: newChecked as unknown as string, status: newStatus }
             : a
         )
       );
       setSelectedApplicant((prev) =>
         prev && prev.reference_number === applicant.reference_number
-          ? { ...prev, checked_requirements: JSON.stringify(newChecked), status: newStatus }
+          ? { ...prev, checked_requirements: newChecked as unknown as string, status: newStatus }
           : prev
       );
     } catch (err) {
