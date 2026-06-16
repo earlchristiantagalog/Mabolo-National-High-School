@@ -407,7 +407,7 @@ export default function ApplicantsPage() {
         </div>
       )}
 
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes fadeIn {
           from { opacity: 0; transform: scale(0.95); }
           to { opacity: 1; transform: scale(1); }
@@ -415,7 +415,7 @@ export default function ApplicantsPage() {
         .animate-in {
           animation: fadeIn 0.2s ease-out forwards;
         }
-      `}</style>
+      `}} />
     </>
   );
 }
