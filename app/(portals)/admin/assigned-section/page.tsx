@@ -110,6 +110,15 @@ function Modal({ open, onClose, title, children }: {
   );
 }
 
+function Spinner({ size = 14 }: { size?: number }) {
+  return (
+    <svg className="animate-spin" width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
+}
+
 export default function AssignedSectionPage() {
   const [sections, setSections] = useState<SectionData[]>([]);
   const [selected, setSelected] = useState<SectionData | null>(null);
@@ -119,6 +128,15 @@ export default function AssignedSectionPage() {
   const [search, setSearch] = useState("");
   const [expandedGrades, setExpandedGrades] = useState<string[]>(["Grade 7"]);
   const [loading, setLoading] = useState(true);
+  const [loadingPeriods, setLoadingPeriods] = useState(false);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [savingSection, setSavingSection] = useState(false);
+  const [deletingSectionId, setDeletingSectionId] = useState<number | null>(null);
+  const [savingPeriod, setSavingPeriod] = useState(false);
+  const [deletingPeriodId, setDeletingPeriodId] = useState<number | null>(null);
+  const [savingStudent, setSavingStudent] = useState(false);
+  const [deletingStudentId, setDeletingStudentId] = useState<number | null>(null);
+  const [searchingStudent, setSearchingStudent] = useState(false);
 
   // Section modal
   const [showSectionModal, setShowSectionModal] = useState(false);
@@ -149,19 +167,23 @@ export default function AssignedSectionPage() {
   }, []);
 
   const fetchPeriods = useCallback(async (sectionId: number) => {
+    setLoadingPeriods(true);
     try {
       const res = await fetch(`/api/admin/periods?sectionId=${sectionId}`);
       const data = await res.json();
       if (data.success) setPeriods(data.periods);
     } catch { /* empty */ }
+    setLoadingPeriods(false);
   }, []);
 
   const fetchStudents = useCallback(async (sectionId: number) => {
+    setLoadingStudents(true);
     try {
       const res = await fetch(`/api/admin/students?sectionId=${sectionId}`);
       const data = await res.json();
       if (data.success) setStudents(data.students);
     } catch { /* empty */ }
+    setLoadingStudents(false);
   }, []);
 
   useEffect(() => { fetchSections(); }, [fetchSections]);
@@ -210,6 +232,7 @@ export default function AssignedSectionPage() {
 
   const handleSaveSection = async () => {
     if (!sectionForm.name || !sectionForm.adviser) return;
+    setSavingSection(true);
     try {
       if (editingSection) {
         await fetch(`/api/admin/sections/${editingSection.id}`, {
@@ -226,6 +249,7 @@ export default function AssignedSectionPage() {
       }
       await fetchSections();
     } catch { /* empty */ }
+    setSavingSection(false);
     setShowSectionModal(false);
   };
 
@@ -238,9 +262,11 @@ export default function AssignedSectionPage() {
       customClass: { confirmButton: "cursor-pointer", cancelButton: "cursor-pointer" },
     }).then(async (result) => {
       if (result.isConfirmed) {
+        setDeletingSectionId(section.id);
         await fetch(`/api/admin/sections/${section.id}`, { method: "DELETE" });
         await fetchSections();
         if (selected?.id === section.id) { setSelected(null); setPeriods([]); setStudents([]); }
+        setDeletingSectionId(null);
         Swal.fire({ title: "Deleted!", text: "Section has been deleted.", icon: "success", confirmButtonColor: "#8B1010", customClass: { confirmButton: "cursor-pointer" } });
       }
     });
@@ -261,6 +287,7 @@ export default function AssignedSectionPage() {
 
   const handleSavePeriod = async () => {
     if (!periodForm.time || !periodForm.subject || !selected) return;
+    setSavingPeriod(true);
     try {
       if (editingPeriod) {
         await fetch(`/api/admin/periods/${editingPeriod.id}`, {
@@ -274,6 +301,7 @@ export default function AssignedSectionPage() {
       });
       await fetchPeriods(selected.id);
     } catch { /* empty */ }
+    setSavingPeriod(false);
     setShowPeriodModal(false);
   };
 
@@ -285,8 +313,10 @@ export default function AssignedSectionPage() {
       customClass: { confirmButton: "cursor-pointer", cancelButton: "cursor-pointer" },
     }).then(async (result) => {
       if (result.isConfirmed) {
+        setDeletingPeriodId(period.id);
         await fetch(`/api/admin/periods/${period.id}`, { method: "DELETE" });
         if (selected) await fetchPeriods(selected.id);
+        setDeletingPeriodId(null);
         Swal.fire({ title: "Deleted!", text: "Period has been removed.", icon: "success", confirmButtonColor: "#8B1010", customClass: { confirmButton: "cursor-pointer" } });
       }
     });
@@ -313,15 +343,18 @@ export default function AssignedSectionPage() {
     if (!studentSearchQuery.trim()) return;
     setSearchAttempted(true);
     setStudentSearchResult(null);
+    setSearchingStudent(true);
     try {
       const res = await fetch(`/api/enroll/search?q=${encodeURIComponent(studentSearchQuery)}`);
       const data = await res.json();
       if (data.success) setStudentSearchResult(data.student);
     } catch { /* empty */ }
+    setSearchingStudent(false);
   };
 
   const handleSaveStudent = async () => {
     if (!selected) return;
+    setSavingStudent(true);
     try {
       if (editingStudent) {
         await fetch(`/api/admin/students/${editingStudent}`, {
@@ -339,7 +372,7 @@ export default function AssignedSectionPage() {
           body: JSON.stringify({ sectionId: selected.id, lrn: studentSearchResult.lrn, fullName: studentSearchResult.name, gender: studentSearchResult.gender }),
         });
       } else {
-        if (!studentForm.name) return;
+        if (!studentForm.name) { setSavingStudent(false); return; }
         await fetch("/api/admin/students", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -349,6 +382,7 @@ export default function AssignedSectionPage() {
       await fetchStudents(selected.id);
       await fetchSections();
     } catch { /* empty */ }
+    setSavingStudent(false);
     setShowStudentModal(false);
   };
 
@@ -360,11 +394,13 @@ export default function AssignedSectionPage() {
       customClass: { confirmButton: "cursor-pointer", cancelButton: "cursor-pointer" },
     }).then(async (result) => {
       if (result.isConfirmed) {
+        setDeletingStudentId(student.id);
         await fetch(`/api/admin/students/${student.id}`, { method: "DELETE" });
         if (selected) {
           await fetchStudents(selected.id);
           await fetchSections();
         }
+        setDeletingStudentId(null);
         Swal.fire({ title: "Deleted!", text: "Student has been removed.", icon: "success", confirmButtonColor: "#8B1010", customClass: { confirmButton: "cursor-pointer" } });
       }
     });
@@ -401,8 +437,8 @@ export default function AssignedSectionPage() {
           <div className="p-4 border-b border-gray-100 flex-shrink-0">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-gray-800">All Sections</h3>
-              <button onClick={openAddSection} className="flex items-center gap-1 px-2.5 py-1.5 bg-[#8B1010] text-white text-[11px] font-semibold rounded-lg hover:bg-[#6d0d0d] transition-colors cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+              <button onClick={openAddSection} disabled={savingSection} className="flex items-center gap-1 px-2.5 py-1.5 bg-[#8B1010] text-white text-[11px] font-semibold rounded-lg hover:bg-[#6d0d0d] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                {savingSection ? <Spinner size={12} /> : <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>}
                 Add
               </button>
             </div>
@@ -443,11 +479,11 @@ export default function AssignedSectionPage() {
                         </div>
                         <div className="flex items-center gap-1">
                           <span className="text-[10px] font-semibold text-gray-400 mr-1">{section.student_count}</span>
-                          <button onClick={(e) => { e.stopPropagation(); openEditSection(section); }} className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-[#8B1010] cursor-pointer">
+                          <button onClick={(e) => { e.stopPropagation(); openEditSection(section); }} disabled={deletingSectionId === section.id} className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-[#8B1010] cursor-pointer disabled:opacity-50">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
                           </button>
-                          <button onClick={(e) => { e.stopPropagation(); handleDeleteSection(section); }} className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-red-500 cursor-pointer">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteSection(section); }} disabled={deletingSectionId === section.id} className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-red-500 cursor-pointer disabled:opacity-50">
+                            {deletingSectionId === section.id ? <Spinner size={12} /> : <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>}
                           </button>
                         </div>
                       </div>
@@ -470,11 +506,11 @@ export default function AssignedSectionPage() {
                     <p className="text-xs text-gray-500 mt-0.5">Adviser: {selected.adviser} · Room {selected.room_no} · {selected.student_count} students</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => openEditSection(selected)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#8B1010] transition-colors cursor-pointer">
+                    <button onClick={() => openEditSection(selected)} disabled={deletingSectionId === selected.id} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#8B1010] transition-colors cursor-pointer disabled:opacity-50">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
                     </button>
-                    <button onClick={() => handleDeleteSection(selected)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                    <button onClick={() => handleDeleteSection(selected)} disabled={deletingSectionId === selected.id} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50">
+                      {deletingSectionId === selected.id ? <Spinner size={16} /> : <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>}
                     </button>
                   </div>
                 </div>
@@ -496,11 +532,19 @@ export default function AssignedSectionPage() {
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-bold text-gray-800">Weekly Schedule</h3>
-                      <button onClick={openAddPeriod} className="flex items-center gap-1.5 px-3 py-2 bg-[#1E5631] text-white text-xs font-semibold rounded-lg hover:bg-[#164427] transition-colors cursor-pointer">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+                      <button onClick={openAddPeriod} disabled={savingPeriod} className="flex items-center gap-1.5 px-3 py-2 bg-[#1E5631] text-white text-xs font-semibold rounded-lg hover:bg-[#164427] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                        {savingPeriod ? <Spinner size={14} /> : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>}
                         Add Period
                       </button>
                     </div>
+                    {loadingPeriods ? (
+                      <div className="flex items-center justify-center py-20">
+                        <div className="text-center">
+                          <div className="w-7 h-7 border-2 border-[#1E5631] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                          <p className="text-xs text-gray-500">Loading schedule...</p>
+                        </div>
+                      </div>
+                    ) : (
                     <div className="border border-gray-200 rounded-xl overflow-hidden">
                       <div className="grid grid-cols-[100px_repeat(5,1fr)] bg-gray-50 border-b border-gray-200">
                         <div className="px-2 py-2.5 border-r border-gray-200"><p className="text-[10px] font-bold text-gray-400 uppercase">Time</p></div>
@@ -540,6 +584,7 @@ export default function AssignedSectionPage() {
                         </div>
                       ))}
                     </div>
+                    )}
                   </div>
                 )}
 
@@ -547,11 +592,19 @@ export default function AssignedSectionPage() {
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-bold text-gray-800">Student List</h3>
-                      <button onClick={openAddStudent} className="flex items-center gap-1.5 px-3 py-2 bg-[#1E5631] text-white text-xs font-semibold rounded-lg hover:bg-[#164427] transition-colors cursor-pointer">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+                      <button onClick={openAddStudent} disabled={savingStudent} className="flex items-center gap-1.5 px-3 py-2 bg-[#1E5631] text-white text-xs font-semibold rounded-lg hover:bg-[#164427] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                        {savingStudent ? <Spinner size={14} /> : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>}
                         Add Student
                       </button>
                     </div>
+                    {loadingStudents ? (
+                      <div className="flex items-center justify-center py-20">
+                        <div className="text-center">
+                          <div className="w-7 h-7 border-2 border-[#1E5631] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                          <p className="text-xs text-gray-500">Loading students...</p>
+                        </div>
+                      </div>
+                    ) : (
                     <table className="w-full">
                       <thead>
                         <tr className="text-[11px] text-gray-500 uppercase tracking-wider border-b border-gray-100">
@@ -569,11 +622,11 @@ export default function AssignedSectionPage() {
                             <td className="px-3 py-3 text-xs text-gray-500">{student.gender}</td>
                             <td className="px-3 py-3 text-right">
                               <div className="flex items-center justify-end gap-1">
-                                <button onClick={() => openEditStudent(student)} className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-[#8B1010] transition-colors cursor-pointer">
+                                <button onClick={() => openEditStudent(student)} disabled={deletingStudentId === student.id} className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-[#8B1010] transition-colors cursor-pointer disabled:opacity-50">
                                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
                                 </button>
-                                <button onClick={() => handleDeleteStudent(student)} className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                <button onClick={() => handleDeleteStudent(student)} disabled={deletingStudentId === student.id} className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50">
+                                  {deletingStudentId === student.id ? <Spinner size={14} /> : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>}
                                 </button>
                               </div>
                             </td>
@@ -581,6 +634,7 @@ export default function AssignedSectionPage() {
                         ))}
                       </tbody>
                     </table>
+                    )}
                   </div>
                 )}
               </div>
@@ -619,8 +673,9 @@ export default function AssignedSectionPage() {
           </div>
         </div>
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
-          <button onClick={() => setShowSectionModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Cancel</button>
-          <button onClick={handleSaveSection} className="px-4 py-2 text-sm font-semibold text-white bg-[#8B1010] rounded-lg hover:bg-[#6d0d0d] transition-colors cursor-pointer">
+          <button onClick={() => setShowSectionModal(false)} disabled={savingSection} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50">Cancel</button>
+          <button onClick={handleSaveSection} disabled={savingSection} className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#8B1010] rounded-lg hover:bg-[#6d0d0d] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+            {savingSection && <Spinner size={14} />}
             {editingSection ? "Save Changes" : "Add Section"}
           </button>
         </div>
@@ -652,8 +707,9 @@ export default function AssignedSectionPage() {
           </div>
         </div>
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
-          <button onClick={() => setShowPeriodModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Cancel</button>
-          <button onClick={handleSavePeriod} className="px-4 py-2 text-sm font-semibold text-white bg-[#8B1010] rounded-lg hover:bg-[#6d0d0d] transition-colors cursor-pointer">
+          <button onClick={() => setShowPeriodModal(false)} disabled={savingPeriod} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50">Cancel</button>
+          <button onClick={handleSavePeriod} disabled={savingPeriod} className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#8B1010] rounded-lg hover:bg-[#6d0d0d] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+            {savingPeriod && <Spinner size={14} />}
             {editingPeriod ? "Save Changes" : "Add Period"}
           </button>
         </div>
@@ -681,12 +737,20 @@ export default function AssignedSectionPage() {
                   <div className="flex gap-2">
                     <input type="text" value={studentSearchQuery} onChange={(e) => setStudentSearchQuery(e.target.value)} placeholder="Enter reference number or LRN"
                       className="flex-1 px-4 py-3 text-sm border-2 rounded-xl transition-all border-gray-200 focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 hover:border-gray-300" />
-                    <button onClick={handleSearchStudent} className="px-4 py-3 bg-[#8B1010] text-white rounded-xl hover:bg-[#6d0d0d] transition-colors cursor-pointer">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                    <button onClick={handleSearchStudent} disabled={searchingStudent} className="px-4 py-3 bg-[#8B1010] text-white rounded-xl hover:bg-[#6d0d0d] transition-colors cursor-pointer disabled:opacity-50">
+                      {searchingStudent ? <Spinner size={18} /> : <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>}
                     </button>
                   </div>
                 </div>
-                {studentSearchResult && (
+                {searchingStudent && (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="w-6 h-6 border-2 border-[#8B1010] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                      <p className="text-xs text-gray-500">Searching student...</p>
+                    </div>
+                  </div>
+                )}
+                {!searchingStudent && studentSearchResult && (
                   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-8 h-8 rounded-full bg-[#1E5631] flex items-center justify-center">
@@ -702,7 +766,7 @@ export default function AssignedSectionPage() {
                     </div>
                   </div>
                 )}
-                {studentSearchQuery && !studentSearchResult && searchAttempted && (
+                {!searchingStudent && studentSearchQuery && !studentSearchResult && searchAttempted && (
                   <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
                     <p className="text-sm text-red-600 font-medium">No student found with that reference or LRN.</p>
                   </div>
@@ -744,9 +808,16 @@ export default function AssignedSectionPage() {
           </div>
         )}
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
-          <button onClick={() => setShowStudentModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Cancel</button>
-          <button onClick={handleSaveStudent} className="px-4 py-2 text-sm font-semibold text-white bg-[#8B1010] rounded-lg hover:bg-[#6d0d0d] transition-colors cursor-pointer">
-            {editingStudent ? "Save Changes" : "Add Student"}
+          <button onClick={() => setShowStudentModal(false)} disabled={savingStudent} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50">Cancel</button>
+          <button onClick={handleSaveStudent} disabled={savingStudent} className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#8B1010] rounded-lg hover:bg-[#6d0d0d] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+            {savingStudent ? (
+              <>
+                <Spinner size={14} />
+                {editingStudent ? "Saving..." : "Adding..."}
+              </>
+            ) : (
+              editingStudent ? "Save Changes" : "Add Student"
+            )}
           </button>
         </div>
       </Modal>

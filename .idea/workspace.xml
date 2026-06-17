@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="266819bf-cd0f-4d45-ba75-1fd8f2204541" name="Changes" comment="Add Email">
+    <list default="true" id="266819bf-cd0f-4d45-ba75-1fd8f2204541" name="Changes" comment="Add functionality of Section, and Enrollments">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(portals)/ict/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(portals)/ict/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(portals)/registrar/applicants/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(portals)/registrar/applicants/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(portals)/registrar/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(portals)/registrar/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(portals)/admin/assigned-section/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(portals)/admin/assigned-section/page.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,7 +19,14 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="INCOMING_COMMITS_CHECK_STRATEGY" value="FETCH" />
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="V1.1" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="SWAP_SIDES_IN_COMPARE_BRANCHES" value="true" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -57,7 +60,8 @@
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
     &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;V1.1&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;V1.2&quot;,
+    &quot;git.auto.fetch.suggestion.counter&quot;: &quot;1&quot;,
     &quot;javascript.preferred.runtime.type.id&quot;: &quot;node&quot;,
     &quot;js.debugger.nextJs.config.created.client&quot;: &quot;true&quot;,
     &quot;js.debugger.nextJs.config.created.server&quot;: &quot;true&quot;,
@@ -119,7 +123,8 @@
       <workItem from="1781521189924" duration="1496000" />
       <workItem from="1781528383408" duration="3250000" />
       <workItem from="1781568705981" duration="3996000" />
-      <workItem from="1781586809102" duration="14060000" />
+      <workItem from="1781586809102" duration="15943000" />
+      <workItem from="1781668610063" duration="1985000" />
     </task>
     <task id="LOCAL-00001" summary="Add new closing state">
       <option name="closed" value="true" />
@@ -161,7 +166,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781598243822</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Add functionality of Section, and Enrollments">
+      <option name="closed" value="true" />
+      <created>1781618798827</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1781618798827</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -178,7 +191,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="origin/main" />
+                        <option value="origin/V1.2" />
                       </list>
                     </value>
                   </entry>
@@ -197,6 +210,7 @@
     <MESSAGE value="Change DB" />
     <MESSAGE value="Modify Applicants" />
     <MESSAGE value="Add Email" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add Email" />
+    <MESSAGE value="Add functionality of Section, and Enrollments" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add functionality of Section, and Enrollments" />
   </component>
 </project>
