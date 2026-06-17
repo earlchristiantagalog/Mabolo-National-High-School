@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS student_accounts (
+  id SERIAL PRIMARY KEY,
+  student_id INTEGER NOT NULL UNIQUE REFERENCES section_students(id) ON DELETE CASCADE,
+  account_id VARCHAR(20) NOT NULL UNIQUE,
+  email VARCHAR(255) NOT NULL,
+  password TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
