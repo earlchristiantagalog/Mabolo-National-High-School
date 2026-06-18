@@ -61,25 +61,27 @@ function CustomSelect({ label, value, onChange, options, placeholder }: {
   );
 }
 
+const DEPARTMENTS = ["Library", "Registrar", "ICT", "Finance", "Guidance", "Clinic"];
+
 const MOCK_STAFF = [
-  { id: "S001", name: "Carlos Mendoza", role: "Registrar", email: "carlos.mendoza@mnhs.edu.ph", status: "Active" },
-  { id: "S002", name: "Luisa Torres", role: "Librarian", email: "luisa.torres@mnhs.edu.ph", status: "Active" },
-  { id: "S003", name: "Miguel Santos", role: "Admin Staff", email: "miguel.santos@mnhs.edu.ph", status: "Active" },
-  { id: "S004", name: "Elena Cruz", role: "Guidance Counselor", email: "elena.cruz@mnhs.edu.ph", status: "Inactive" },
+  { id: "S001", name: "Carlos Mendoza", department: "Registrar", email: "carlos.mendoza@mnhs.edu.ph", status: "Active" },
+  { id: "S002", name: "Luisa Torres", department: "Library", email: "luisa.torres@mnhs.edu.ph", status: "Active" },
+  { id: "S003", name: "Miguel Santos", department: "ICT", email: "miguel.santos@mnhs.edu.ph", status: "Active" },
+  { id: "S004", name: "Elena Cruz", department: "Guidance", email: "elena.cruz@mnhs.edu.ph", status: "Inactive" },
 ];
 
 export default function ICTStaff() {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [modalStatus, setModalStatus] = useState("");
+  const [modalDepartment, setModalDepartment] = useState("");
 
   const filtered = MOCK_STAFF.filter(
     (a) =>
       (a.name.toLowerCase().includes(search.toLowerCase()) ||
       a.id.includes(search) ||
       a.email.toLowerCase().includes(search.toLowerCase())) &&
-      (!statusFilter || a.status === statusFilter)
+      (!departmentFilter || a.department === departmentFilter)
   );
 
   return (
@@ -123,14 +125,11 @@ export default function ICTStaff() {
         </div>
         <div className="w-full sm:w-40">
           <CustomSelect
-            label="Status"
-            value={statusFilter}
-            onChange={setStatusFilter}
+            label="Department"
+            value={departmentFilter}
+            onChange={setDepartmentFilter}
             placeholder="All"
-            options={[
-              { value: "Active", label: "Active" },
-              { value: "Inactive", label: "Inactive" },
-            ]}
+            options={DEPARTMENTS.map(d => ({ value: d, label: d }))}
           />
         </div>
       </div>
@@ -142,7 +141,7 @@ export default function ICTStaff() {
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">ID</th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+                <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
                 <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
@@ -153,7 +152,7 @@ export default function ICTStaff() {
                 <tr key={account.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono font-medium text-[#8B1010]">{account.id}</td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-800">{account.name}</td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{account.role}</td>
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{account.department}</td>
                   <td className="hidden sm:table-cell px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-500">{account.email}</td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4">
                     <span
@@ -202,37 +201,28 @@ export default function ICTStaff() {
             <div className="px-6 py-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">First Name</label>
-                  <input type="text" className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
+                  <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">First Name</label>
+                  <input type="text" className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Last Name</label>
-                  <input type="text" className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
+                  <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Last Name</label>
+                  <input type="text" className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Email</label>
-                <input type="email" className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
+                <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Email</label>
+                <input type="email" className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Role</label>
-                  <input type="text" className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
-                </div>
-                <CustomSelect
-                  label="Status"
-                  value={modalStatus}
-                  onChange={setModalStatus}
-                  placeholder="Select status"
-                  options={[
-                    { value: "Active", label: "Active" },
-                    { value: "Inactive", label: "Inactive" },
-                  ]}
-                />
-              </div>
+              <CustomSelect
+                label="Department"
+                value={modalDepartment}
+                onChange={setModalDepartment}
+                placeholder="Select department"
+                options={DEPARTMENTS.map(d => ({ value: d, label: d }))}
+              />
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Password</label>
-                <input type="password" className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
+                <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Password</label>
+                <input type="password" placeholder="Minimum 6 characters" className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all placeholder:text-gray-400" />
               </div>
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
