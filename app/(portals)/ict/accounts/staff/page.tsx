@@ -63,26 +63,91 @@ function CustomSelect({ label, value, onChange, options, placeholder }: {
 
 const DEPARTMENTS = ["Library", "Registrar", "ICT", "Finance", "Guidance", "Clinic"];
 
-const MOCK_STAFF = [
-  { id: "S001", name: "Carlos Mendoza", department: "Registrar", email: "carlos.mendoza@mnhs.edu.ph", status: "Active" },
-  { id: "S002", name: "Luisa Torres", department: "Library", email: "luisa.torres@mnhs.edu.ph", status: "Active" },
-  { id: "S003", name: "Miguel Santos", department: "ICT", email: "miguel.santos@mnhs.edu.ph", status: "Active" },
-  { id: "S004", name: "Elena Cruz", department: "Guidance", email: "elena.cruz@mnhs.edu.ph", status: "Inactive" },
-];
+type StaffAccount = {
+  account_id: string;
+  name: string;
+  department: string;
+  email: string;
+  status: string;
+};
 
 export default function ICTStaff() {
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [modalDepartment, setModalDepartment] = useState("");
+  const [allStaff, setAllStaff] = useState<StaffAccount[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = MOCK_STAFF.filter(
+  const [showModal, setShowModal] = useState(false);
+  const [modalFirstName, setModalFirstName] = useState("");
+  const [modalLastName, setModalLastName] = useState("");
+  const [modalEmail, setModalEmail] = useState("");
+  const [modalDepartment, setModalDepartment] = useState("");
+  const [modalPassword, setModalPassword] = useState("");
+  const [modalLoading, setModalLoading] = useState(false);
+  const [modalError, setModalError] = useState("");
+
+  const fetchStaff = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/ict/staff-accounts");
+      const data = await res.json();
+      if (data.success) setAllStaff(data.staff);
+    } catch { /* empty */ }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchStaff(); }, []);
+
+  useEffect(() => {
+    if (showModal) {
+      setModalFirstName("");
+      setModalLastName("");
+      setModalEmail("");
+      setModalDepartment("");
+      setModalPassword("");
+      setModalError("");
+    }
+  }, [showModal]);
+
+  const filtered = allStaff.filter(
     (a) =>
-      (a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.id.includes(search) ||
+      (!search || a.name.toLowerCase().includes(search.toLowerCase()) ||
+      a.account_id.includes(search) ||
       a.email.toLowerCase().includes(search.toLowerCase())) &&
       (!departmentFilter || a.department === departmentFilter)
   );
+
+  const handleCreate = async () => {
+    if (!modalFirstName || !modalLastName || !modalEmail || !modalDepartment || !modalPassword) {
+      setModalError("All fields are required");
+      return;
+    }
+    setModalLoading(true);
+    setModalError("");
+    try {
+      const res = await fetch("/api/ict/staff-accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: modalFirstName,
+          lastName: modalLastName,
+          email: modalEmail,
+          department: modalDepartment,
+          password: modalPassword,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowModal(false);
+        fetchStaff();
+      } else {
+        setModalError(data.error || "Failed to create account");
+      }
+    } catch {
+      setModalError("Failed to create account");
+    }
+    setModalLoading(false);
+  };
 
   return (
     <>
@@ -95,7 +160,7 @@ export default function ICTStaff() {
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Staff</h1>
             <p className="text-xs sm:text-sm text-gray-500 mt-1">
-              Manage staff accounts — {MOCK_STAFF.length} total
+              Manage staff accounts — {allStaff.length} total
             </p>
           </div>
           <button
@@ -148,9 +213,11 @@ export default function ICTStaff() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filtered.map((account) => (
-                <tr key={account.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono font-medium text-[#8B1010]">{account.id}</td>
+              {loading ? (
+                <tr><td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-400">Loading...</td></tr>
+              ) : filtered.length > 0 ? filtered.map((account) => (
+                <tr key={account.account_id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono font-medium text-[#8B1010]">{account.account_id}</td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-800">{account.name}</td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{account.department}</td>
                   <td className="hidden sm:table-cell px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-500">{account.email}</td>
@@ -166,14 +233,15 @@ export default function ICTStaff() {
                     </span>
                   </td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4">
-                    <button className="text-[11px] sm:text-xs font-medium text-[#8B1010] hover:underline">Edit</button>
+                    <button className="text-[11px] sm:text-xs font-medium text-[#8B1010] hover:underline cursor-pointer">Edit</button>
                   </td>
                 </tr>
-              ))}
-              {filtered.length === 0 && (
+              )) : (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-400">
-                    No staff found matching &quot;{search}&quot;
+                    {allStaff.length === 0 && !search
+                      ? "No staff accounts yet"
+                      : `No staff found matching \u201c${search}\u201d`}
                   </td>
                 </tr>
               )}
@@ -202,16 +270,31 @@ export default function ICTStaff() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">First Name</label>
-                  <input type="text" className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
+                  <input
+                    type="text"
+                    value={modalFirstName}
+                    onChange={(e) => setModalFirstName(e.target.value)}
+                    className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all"
+                  />
                 </div>
                 <div>
                   <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Last Name</label>
-                  <input type="text" className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
+                  <input
+                    type="text"
+                    value={modalLastName}
+                    onChange={(e) => setModalLastName(e.target.value)}
+                    className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all"
+                  />
                 </div>
               </div>
               <div>
                 <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Email</label>
-                <input type="email" className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
+                <input
+                  type="email"
+                  value={modalEmail}
+                  onChange={(e) => setModalEmail(e.target.value)}
+                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all"
+                />
               </div>
               <CustomSelect
                 label="Department"
@@ -222,21 +305,33 @@ export default function ICTStaff() {
               />
               <div>
                 <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Password</label>
-                <input type="password" placeholder="Minimum 6 characters" className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all placeholder:text-gray-400" />
+                <input
+                  type="password"
+                  value={modalPassword}
+                  onChange={(e) => setModalPassword(e.target.value)}
+                  placeholder="Minimum 6 characters"
+                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all placeholder:text-gray-400"
+                />
               </div>
+              {modalError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                  <p className="text-xs text-red-600">{modalError}</p>
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-sm font-medium bg-[#8B1010] text-white rounded-lg hover:bg-[#6e0d0d] transition-colors"
+                onClick={handleCreate}
+                disabled={modalLoading || !modalFirstName || !modalLastName || !modalEmail || !modalDepartment || !modalPassword}
+                className="px-4 py-2 text-sm font-medium bg-[#8B1010] text-white rounded-lg hover:bg-[#6e0d0d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                Add Staff
+                {modalLoading ? "Creating..." : "Add Staff"}
               </button>
             </div>
           </div>
