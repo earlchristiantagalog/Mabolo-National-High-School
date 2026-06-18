@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="266819bf-cd0f-4d45-ba75-1fd8f2204541" name="Changes" comment="Updating some changes regarding for student account">
+    <list default="true" id="266819bf-cd0f-4d45-ba75-1fd8f2204541" name="Changes" comment="Add functionality of Add Teachers">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(portals)/ict/accounts/students/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(portals)/ict/accounts/students/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(portals)/ict/accounts/teachers/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(portals)/ict/accounts/teachers/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/ict/student-accounts/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/ict/student-accounts/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sql/check_db.js" beforeDir="false" afterPath="$PROJECT_DIR$/sql/check_db.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -127,7 +125,7 @@
       <workItem from="1781568705981" duration="3996000" />
       <workItem from="1781586809102" duration="15943000" />
       <workItem from="1781668610063" duration="6531000" />
-      <workItem from="1781740739474" duration="3973000" />
+      <workItem from="1781740739474" duration="4614000" />
     </task>
     <task id="LOCAL-00001" summary="Add new closing state">
       <option name="closed" value="true" />
@@ -201,7 +199,23 @@
       <option name="project" value="LOCAL" />
       <updated>1781741169068</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Add functionality of Add Teachers">
+      <option name="closed" value="true" />
+      <created>1781750198502</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1781750198502</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Add functionality of Add Teachers">
+      <option name="closed" value="true" />
+      <created>1781750364800</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1781750364800</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -241,7 +255,8 @@
     <MESSAGE value="Fix the loading state in the assign section" />
     <MESSAGE value="Add Students Account and change the Version into 1.2" />
     <MESSAGE value="Updating some changes regarding for student account" />
-    <option name="LAST_COMMIT_MESSAGE" value="Updating some changes regarding for student account" />
+    <MESSAGE value="Add functionality of Add Teachers" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add functionality of Add Teachers" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

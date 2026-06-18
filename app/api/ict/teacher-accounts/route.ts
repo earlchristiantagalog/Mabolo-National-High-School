@@ -77,22 +77,27 @@ export async function GET() {
     await ensureTable();
     const teachers = await query<{
       teacher_name: string;
-      email: string;
-      account_id: string;
-      created_at: string;
+      email: string | null;
+      account_id: string | null;
+      created_at: string | null;
       sections: { name: string; grade: string }[] | null;
     }[]>(
-      `SELECT ta.teacher_name, ta.email, ta.account_id, ta.created_at,
+      `SELECT DISTINCT sp.teacher AS teacher_name,
+              ta.email,
+              ta.account_id,
+              ta.created_at,
               COALESCE(
-                (SELECT json_agg(json_build_object('name', sec.name, 'grade', sec.grade))
-                 FROM section_periods sp
-                 JOIN sections sec ON sp.section_id = sec.id
-                 WHERE sp.teacher = ta.teacher_name
-                 GROUP BY sec.name, sec.grade),
+                (SELECT json_agg(json_build_object('name', s2.name, 'grade', s2.grade))
+                 FROM section_periods sp2
+                 JOIN sections s2 ON sp2.section_id = s2.id
+                 WHERE sp2.teacher = sp.teacher
+                 GROUP BY s2.name, s2.grade),
                 '[]'::json
               ) AS sections
-       FROM teacher_accounts ta
-       ORDER BY ta.teacher_name`
+       FROM section_periods sp
+       LEFT JOIN teacher_accounts ta ON ta.teacher_name = sp.teacher
+       WHERE sp.teacher IS NOT NULL AND sp.teacher != ''
+       ORDER BY sp.teacher`
     );
     return NextResponse.json({ success: true, teachers });
   } catch (error: unknown) {

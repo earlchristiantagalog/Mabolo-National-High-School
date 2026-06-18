@@ -279,13 +279,19 @@ export default function ICTTeachers() {
                 <tr><td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-400">Loading...</td></tr>
               ) : filtered.length > 0 ? filtered.map((account) => (
                 <tr key={account.teacher_name} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono font-medium text-[#8B1010]">{account.account_id}</td>
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono font-medium text-[#8B1010]">{account.account_id || "—"}</td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-800">{account.teacher_name}</td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{getSectionsDisplay(account)}</td>
-                  <td className="hidden sm:table-cell px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-500">{account.email}</td>
+                  <td className="hidden sm:table-cell px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-500">{account.email || "—"}</td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4">
-                    <span className="inline-flex text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-[#1E5631]/10 text-[#1E5631]">
-                      Active
+                    <span
+                      className={`inline-flex text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        account.account_id
+                          ? "bg-[#1E5631]/10 text-[#1E5631]"
+                          : "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {account.account_id ? "Active" : "No Account"}
                     </span>
                   </td>
                 </tr>
