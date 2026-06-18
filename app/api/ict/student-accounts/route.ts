@@ -27,7 +27,7 @@ async function sendAccountEmail(
   });
 
   const mailOptions = {
-    from: process.env.SMTP_FROM || "MNHS Enrollment <noreply@mnhs.edu.ph>",
+    from: process.env.SMTP_FROM || "MNHS ICT Department <noreply@mnhs.edu.ph>",
     to: email,
     subject: `MNHS Student Account - ${grade} ${sectionName}`,
     html: `
