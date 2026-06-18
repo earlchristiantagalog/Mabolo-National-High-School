@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="266819bf-cd0f-4d45-ba75-1fd8f2204541" name="Changes" comment="Fix the loading state in the assign section">
+    <list default="true" id="266819bf-cd0f-4d45-ba75-1fd8f2204541" name="Changes" comment="Add Students Account and change the Version into 1.2">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(portals)/admin/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(portals)/admin/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(portals)/ict/accounts/students/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(portals)/ict/accounts/students/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(portals)/ict/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(portals)/ict/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(portals)/registrar/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(portals)/registrar/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/ict/student-accounts/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/ict/student-accounts/route.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -127,7 +124,8 @@
       <workItem from="1781528383408" duration="3250000" />
       <workItem from="1781568705981" duration="3996000" />
       <workItem from="1781586809102" duration="15943000" />
-      <workItem from="1781668610063" duration="5802000" />
+      <workItem from="1781668610063" duration="6531000" />
+      <workItem from="1781740739474" duration="312000" />
     </task>
     <task id="LOCAL-00001" summary="Add new closing state">
       <option name="closed" value="true" />
@@ -185,7 +183,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781671861267</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Add Students Account and change the Version into 1.2">
+      <option name="closed" value="true" />
+      <created>1781699584793</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1781699584793</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -223,7 +229,8 @@
     <MESSAGE value="Add Email" />
     <MESSAGE value="Add functionality of Section, and Enrollments" />
     <MESSAGE value="Fix the loading state in the assign section" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fix the loading state in the assign section" />
+    <MESSAGE value="Add Students Account and change the Version into 1.2" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add Students Account and change the Version into 1.2" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -231,7 +238,6 @@
         <line-breakpoint enabled="true" type="javascript">
           <url>file://$PROJECT_DIR$/app/(portals)/admin/announcements/page.tsx</url>
           <line>42</line>
-          <properties lambdaOrdinal="-1" />
           <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>

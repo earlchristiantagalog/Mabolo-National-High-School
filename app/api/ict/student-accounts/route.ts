@@ -96,27 +96,43 @@ export async function GET(req: NextRequest) {
       sql = `
         SELECT ss.id, ss.full_name, ss.lrn, ss.gender, ss.section_id, ss.enrollment_id,
                sec.name AS section_name, sec.grade,
-               e.last_name, e.first_name, e.middle_name, e.email,
+               COALESCE(e.last_name, e2.last_name) AS last_name,
+               COALESCE(e.first_name, e2.first_name) AS first_name,
+               COALESCE(e.middle_name, e2.middle_name) AS middle_name,
+               COALESCE(e.email, e2.email) AS email,
                sa.account_id AS student_id, sa.email AS account_email
         FROM section_students ss
         JOIN sections sec ON ss.section_id = sec.id
         LEFT JOIN enrollments e ON ss.enrollment_id = e.id
+        LEFT JOIN LATERAL (
+          SELECT last_name, first_name, middle_name, email
+          FROM enrollments WHERE lrn = ss.lrn
+          ORDER BY id DESC LIMIT 1
+        ) e2 ON ss.enrollment_id IS NULL AND ss.lrn IS NOT NULL
         LEFT JOIN student_accounts sa ON sa.student_id = ss.id
         WHERE ss.section_id = $1
-        ORDER BY e.last_name, e.first_name
+        ORDER BY COALESCE(e.last_name, e2.last_name), COALESCE(e.first_name, e2.first_name)
       `;
       params = [parseInt(sectionId)];
     } else {
       sql = `
         SELECT ss.id, ss.full_name, ss.lrn, ss.gender, ss.section_id, ss.enrollment_id,
                sec.name AS section_name, sec.grade,
-               e.last_name, e.first_name, e.middle_name, e.email,
+               COALESCE(e.last_name, e2.last_name) AS last_name,
+               COALESCE(e.first_name, e2.first_name) AS first_name,
+               COALESCE(e.middle_name, e2.middle_name) AS middle_name,
+               COALESCE(e.email, e2.email) AS email,
                sa.account_id AS student_id, sa.email AS account_email
         FROM section_students ss
         JOIN sections sec ON ss.section_id = sec.id
         LEFT JOIN enrollments e ON ss.enrollment_id = e.id
+        LEFT JOIN LATERAL (
+          SELECT last_name, first_name, middle_name, email
+          FROM enrollments WHERE lrn = ss.lrn
+          ORDER BY id DESC LIMIT 1
+        ) e2 ON ss.enrollment_id IS NULL AND ss.lrn IS NOT NULL
         LEFT JOIN student_accounts sa ON sa.student_id = ss.id
-        ORDER BY sec.grade, sec.name, e.last_name, e.first_name
+        ORDER BY sec.grade, sec.name, COALESCE(e.last_name, e2.last_name), COALESCE(e.first_name, e2.first_name)
       `;
       params = [];
     }
