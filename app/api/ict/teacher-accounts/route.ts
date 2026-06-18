@@ -16,8 +16,9 @@ async function ensureTable() {
 }
 
 function generateAccountId(): string {
-  const digits = Math.floor(10000000 + Math.random() * 90000000);
-  return String(digits);
+  const year = new Date().getFullYear();
+  const digits = String(Math.floor(1000 + Math.random() * 9000));
+  return `${year}${digits}`;
 }
 
 async function sendAccountEmail(
