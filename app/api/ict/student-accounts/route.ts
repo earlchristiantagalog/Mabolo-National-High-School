@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
                COALESCE(e.first_name, e2.first_name) AS first_name,
                COALESCE(e.middle_name, e2.middle_name) AS middle_name,
                COALESCE(e.email, e2.email) AS email,
-               sa.account_id AS student_id, sa.email AS account_email
+               sa.account_id AS student_id, sa.email AS account_email, sa.id AS account_db_id, COALESCE(sa.status, 'Active') AS account_status
         FROM section_students ss
         JOIN sections sec ON ss.section_id = sec.id
         LEFT JOIN enrollments e ON ss.enrollment_id = e.id
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
                COALESCE(e.first_name, e2.first_name) AS first_name,
                COALESCE(e.middle_name, e2.middle_name) AS middle_name,
                COALESCE(e.email, e2.email) AS email,
-               sa.account_id AS student_id, sa.email AS account_email
+               sa.account_id AS student_id, sa.email AS account_email, sa.id AS account_db_id, COALESCE(sa.status, 'Active') AS account_status
         FROM section_students ss
         JOIN sections sec ON ss.section_id = sec.id
         LEFT JOIN enrollments e ON ss.enrollment_id = e.id

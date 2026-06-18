@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Swal from "sweetalert2";
 
 type Section = { id: number; name: string; grade: string };
 
 type TeacherAccount = {
+  id: number | null;
   teacher_name: string;
   email: string;
   account_id: string;
+  status: string;
   created_at: string;
   sections: { name: string; grade: string }[] | null;
 };
@@ -39,7 +42,7 @@ function CustomSelect({ label, value, onChange, options, placeholder }: {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-2.5 text-sm border-2 rounded-xl transition-all duration-200 bg-white text-left border-gray-200 hover:border-gray-200"
+        className="w-full flex items-center justify-between px-4 py-2.5 text-sm border-2 rounded-xl transition-all duration-200 bg-white text-left border-gray-200 hover:border-gray-200 cursor-pointer"
       >
         <span className={value ? "text-gray-900 font-medium" : "text-gray-400"}>
           {value ? selected?.label : placeholder || "Select option"}
@@ -55,7 +58,7 @@ function CustomSelect({ label, value, onChange, options, placeholder }: {
               key={opt.value}
               type="button"
               onClick={() => { onChange(opt.value); setOpen(false); }}
-              className={`w-full text-left px-4 py-2.5 text-sm transition-all border-b border-gray-50 last:border-b-0 min-h-[40px] flex items-center ${
+              className={`w-full text-left px-4 py-2.5 text-sm transition-all border-b border-gray-50 last:border-b-0 min-h-[40px] flex items-center cursor-pointer ${
                 opt.value === value
                   ? "bg-[#8B1010]/5 text-[#8B1010] font-semibold"
                   : "text-gray-700 hover:bg-gray-50"
@@ -87,6 +90,13 @@ export default function ICTTeachers() {
   const [modalPassword, setModalPassword] = useState("");
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
+
+  const [editModal, setEditModal] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState<TeacherAccount | null>(null);
+  const [editEmail, setEditEmail] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
 
   const uniqueGrades = [...new Set(sections.map((s) => s.grade))].sort();
   const gradeSections = gradeFilter
@@ -154,6 +164,7 @@ export default function ICTTeachers() {
   }, [showModal]);
 
   const filtered = allTeachers.filter((t) => {
+    if (!t.account_id) return false;
     const sectionsMatch = !gradeFilter || (t.sections || []).some((s) => s.grade === gradeFilter);
     const sectionMatch = !sectionFilter || (t.sections || []).some((s) => String(s.grade) === gradeFilter && s.name === sections.find((sec) => String(sec.id) === sectionFilter)?.name);
     const searchMatch = !search ||
@@ -184,6 +195,7 @@ export default function ICTTeachers() {
       if (data.success) {
         setShowModal(false);
         fetchAllTeachers();
+        Swal.fire({ icon: "success", title: "Account Created", text: "Teacher account has been created.", timer: 1500, showConfirmButton: false });
       } else {
         setModalError(data.error || "Failed to create account");
       }
@@ -193,8 +205,104 @@ export default function ICTTeachers() {
     setModalLoading(false);
   };
 
+  const handleEdit = (teacher: TeacherAccount) => {
+    setEditingTeacher(teacher);
+    setEditEmail(teacher.email || "");
+    setEditPassword("");
+    setEditError("");
+    setEditModal(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!editEmail.trim()) {
+      setEditError("Email is required");
+      return;
+    }
+    setEditLoading(true);
+    setEditError("");
+    try {
+      const res = await fetch(`/api/ict/teacher-accounts/${editingTeacher!.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: editEmail.trim(), password: editPassword }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEditModal(false);
+        setEditingTeacher(null);
+        fetchAllTeachers();
+        Swal.fire({ icon: "success", title: "Updated", text: "Teacher account has been updated.", timer: 1500, showConfirmButton: false });
+      } else {
+        setEditError(data.error || "Failed to update");
+      }
+    } catch {
+      setEditError("Network error");
+    }
+    setEditLoading(false);
+  };
+
+  const handleDelete = async (teacher: TeacherAccount) => {
+    if (!teacher.id) return;
+    const result = await Swal.fire({
+      title: "Delete Teacher Account?",
+      html: `Are you sure you want to delete the account for <strong>${teacher.teacher_name}</strong>?<br>This cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#8B1010",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, delete",
+      cancelButtonText: "Cancel",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      const res = await fetch(`/api/ict/teacher-accounts/${teacher.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        fetchAllTeachers();
+        Swal.fire({ icon: "success", title: "Deleted", text: "Account has been deleted.", timer: 1500, showConfirmButton: false });
+      } else {
+        Swal.fire({ icon: "error", title: "Error", text: data.error || "Failed to delete" });
+      }
+    } catch {
+      Swal.fire({ icon: "error", title: "Error", text: "Network error" });
+    }
+  };
+
+  const handleBan = async (teacher: TeacherAccount) => {
+    if (!teacher.id) return;
+    const isBanned = teacher.status === "Banned";
+    const action = isBanned ? "Unban" : "Ban";
+    const result = await Swal.fire({
+      title: `${action} Teacher?`,
+      html: `Are you sure you want to ${action.toLowerCase()} <strong>${teacher.teacher_name}</strong>?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: isBanned ? "#1E5631" : "#8B1010",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: `Yes, ${action.toLowerCase()}`,
+      cancelButtonText: "Cancel",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      const res = await fetch(`/api/ict/teacher-accounts/${teacher.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: isBanned ? "Active" : "Banned" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchAllTeachers();
+        Swal.fire({ icon: "success", title: `${action}ned`, text: `Teacher has been ${action.toLowerCase()}ned.`, timer: 1500, showConfirmButton: false });
+      } else {
+        Swal.fire({ icon: "error", title: "Error", text: data.error || `Failed to ${action.toLowerCase()}` });
+      }
+    } catch {
+      Swal.fire({ icon: "error", title: "Error", text: "Network error" });
+    }
+  };
+
   const getSectionsDisplay = (t: TeacherAccount) => {
-    if (!t.sections || t.sections.length === 0) return "—";
+    if (!t.sections || t.sections.length === 0) return "\u2014";
     const unique = t.sections.filter(
       (s, i, arr) => arr.findIndex((x) => x.name === s.name && x.grade === s.grade) === i
     );
@@ -212,7 +320,7 @@ export default function ICTTeachers() {
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Teachers</h1>
             <p className="text-xs sm:text-sm text-gray-500 mt-1">
-              Manage teacher accounts — {allTeachers.length} total
+              Manage teacher accounts — {filtered.length} total
             </p>
           </div>
           <button
@@ -237,7 +345,7 @@ export default function ICTTeachers() {
             placeholder="Search by name, ID, or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all"
+            className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all cursor-pointer"
           />
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
@@ -272,35 +380,53 @@ export default function ICTTeachers() {
                 <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Sections</th>
                 <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr><td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-400">Loading...</td></tr>
+                <tr><td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-400">Loading...</td></tr>
               ) : filtered.length > 0 ? filtered.map((account) => (
                 <tr key={account.teacher_name} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono font-medium text-[#8B1010]">{account.account_id || "—"}</td>
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono font-medium text-[#8B1010]">{account.account_id || "\u2014"}</td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-800">{account.teacher_name}</td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{getSectionsDisplay(account)}</td>
-                  <td className="hidden sm:table-cell px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-500">{account.email || "—"}</td>
+                  <td className="hidden sm:table-cell px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-500">{account.email || "\u2014"}</td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4">
                     <span
                       className={`inline-flex text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        account.account_id
-                          ? "bg-[#1E5631]/10 text-[#1E5631]"
-                          : "bg-gray-100 text-gray-500"
+                        !account.account_id
+                          ? "bg-gray-100 text-gray-500"
+                          : account.status === "Banned"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-[#1E5631]/10 text-[#1E5631]"
                       }`}
                     >
-                      {account.account_id ? "Active" : "No Account"}
+                      {!account.account_id ? "No Account" : account.status}
                     </span>
                   </td>
+                  <td className="px-4 sm:px-6 py-3 sm:py-4">
+                    {account.id ? (
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleEdit(account)} className="text-[11px] sm:text-xs font-medium text-[#8B1010] hover:underline cursor-pointer">Edit</button>
+                        <span className="text-gray-300">|</span>
+                        <button onClick={() => handleBan(account)} className={`text-[11px] sm:text-xs font-medium hover:underline cursor-pointer ${account.status === "Banned" ? "text-[#1E5631]" : "text-orange-600"}`}>
+                          {account.status === "Banned" ? "Unban" : "Ban"}
+                        </button>
+                        <span className="text-gray-300">|</span>
+                        <button onClick={() => handleDelete(account)} className="text-[11px] sm:text-xs font-medium text-red-600 hover:underline cursor-pointer">Delete</button>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] sm:text-xs text-gray-400">-</span>
+                    )}
+                  </td>
                 </tr>
-              )              ) : (
+              )) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-400">
-                    {allTeachers.length === 0 && !search
+                  <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-400">
+                    {allTeachers.length === 0
                       ? "No teacher accounts yet"
-                      : `No teachers found matching \u201c${search}\u201d`}
+                      : "No teacher accounts found"}
                   </td>
                 </tr>
               )}
@@ -370,7 +496,7 @@ export default function ICTTeachers() {
                   value={modalEmail}
                   onChange={(e) => setModalEmail(e.target.value)}
                   placeholder="teacher@mnhs.edu.ph"
-                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all placeholder:text-gray-400"
+                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all placeholder:text-gray-400 cursor-pointer"
                 />
               </div>
 
@@ -381,7 +507,7 @@ export default function ICTTeachers() {
                   value={modalPassword}
                   onChange={(e) => setModalPassword(e.target.value)}
                   placeholder="Minimum 6 characters"
-                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all placeholder:text-gray-400"
+                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all placeholder:text-gray-400 cursor-pointer"
                 />
               </div>
 
@@ -404,6 +530,55 @@ export default function ICTTeachers() {
                 className="px-4 py-2 text-sm font-medium bg-[#8B1010] text-white rounded-lg hover:bg-[#6e0d0d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {modalLoading ? "Creating..." : "Add Teacher"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editModal && editingTeacher && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ animation: "fadeIn 0.2s ease-out" }}>
+          <div className="fixed inset-0 bg-black/50" style={{ animation: "fadeIn 0.2s ease-out" }} onClick={() => setEditModal(false)} />
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ animation: "modalIn 0.2s ease-out" }}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-bold text-gray-800">Edit Teacher</h2>
+              <button onClick={() => setEditModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" x2="6" y1="6" y2="18" /><line x1="6" x2="18" y1="6" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              {editError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 rounded-lg">{editError}</div>
+              )}
+              <div className="bg-gray-50 rounded-xl p-3 border border-gray-200">
+                <p className="text-xs text-gray-500 mb-1">Teacher Name</p>
+                <p className="text-sm font-semibold text-gray-800">{editingTeacher.teacher_name}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Email</label>
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all cursor-pointer"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">New Password <span className="text-gray-400 normal-case">(leave blank to keep current)</span></label>
+                <input
+                  type="password"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all cursor-pointer"
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
+              <button onClick={() => setEditModal(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors cursor-pointer">Cancel</button>
+              <button onClick={handleEditSave} disabled={editLoading} className="px-4 py-2 text-sm font-medium bg-[#8B1010] text-white rounded-lg hover:bg-[#6e0d0d] transition-colors disabled:opacity-50 cursor-pointer">
+                {editLoading ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>

@@ -87,7 +87,7 @@ export async function GET() {
       email: string;
       status: string;
     }[]>(
-      `SELECT id, account_id, first_name || ' ' || last_name AS name, department, email, status
+      `SELECT id, account_id, first_name || ' ' || last_name AS name, department, email, COALESCE(status, 'Active') AS status
        FROM staff_accounts
        ORDER BY last_name, first_name`
     );

@@ -31,7 +31,7 @@ async function sendEnrollmentEmail(email: string, refNo: string, firstName: stri
   const requirementsHtml = requirements.map(r => `<li style="padding: 4px 0;">${r}</li>`).join("");
 
   const mailOptions = {
-    from: process.env.SMTP_FROM || "MNHS Enrollment <noreply@mnhs.edu.ph>",
+    from: "MNHS Enrollment <noreply@mnhs.edu.ph>",
     to: email,
     subject: `Enrollment Received - Reference No. ${refNo}`,
     html: `

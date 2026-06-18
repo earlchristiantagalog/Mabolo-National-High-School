@@ -4,5 +4,6 @@ CREATE TABLE IF NOT EXISTS student_accounts (
   account_id VARCHAR(20) NOT NULL UNIQUE,
   email VARCHAR(255) NOT NULL,
   password TEXT NOT NULL,
+  status VARCHAR(20) DEFAULT 'Active',
   created_at TIMESTAMP DEFAULT NOW()
 );

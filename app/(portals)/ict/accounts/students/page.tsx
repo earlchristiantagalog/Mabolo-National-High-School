@@ -23,6 +23,8 @@ interface StudentData {
   email: string | null;
   student_id: string | null;
   account_email: string | null;
+  account_db_id: number | null;
+  account_status: string;
 }
 
 function CustomSelect({ label, value, onChange, options, placeholder, disabled }: {
@@ -84,7 +86,6 @@ export default function ICTStudents() {
   const [gradeFilter, setGradeFilter] = useState("");
   const [sectionFilter, setSectionFilter] = useState("");
 
-  // Add Account modal
   const [showModal, setShowModal] = useState(false);
   const [modalGrade, setModalGrade] = useState("");
   const [modalSectionId, setModalSectionId] = useState("");
@@ -96,6 +97,13 @@ export default function ICTStudents() {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [loadingModalStudents, setLoadingModalStudents] = useState(false);
+
+  const [editModal, setEditModal] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<StudentData | null>(null);
+  const [editEmail, setEditEmail] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
 
   const filteredSections = gradeFilter
     ? sections.filter((s) => s.grade === gradeFilter)
@@ -130,7 +138,6 @@ export default function ICTStudents() {
   useEffect(() => { fetchSections(); }, [fetchSections]);
   useEffect(() => { if (sections.length > 0) fetchAllStudents(); }, [sections, fetchAllStudents]);
 
-  // Fetch students for modal section
   useEffect(() => {
     if (!modalSectionId) { setModalStudents([]); return; }
     setLoadingModalStudents(true);
@@ -138,7 +145,6 @@ export default function ICTStudents() {
       .then((r) => r.json())
       .then((data) => {
         if (data.success) {
-          // Filter out students who already have accounts
           const accountStudentIds = new Set(allStudents.map((s) => s.id));
           setModalStudents(data.students.filter((s: StudentData) => !accountStudentIds.has(s.id)));
         } else setModalStudents([]);
@@ -147,12 +153,10 @@ export default function ICTStudents() {
       .finally(() => setLoadingModalStudents(false));
   }, [modalSectionId, allStudents]);
 
-  // Auto-fill email when student is selected
   useEffect(() => {
     if (!modalStudentId) { setModalEmail(""); return; }
     const student = modalStudents.find((s) => s.id === parseInt(modalStudentId));
     if (student) {
-      // Fetch enrollment email
       fetch(`/api/ict/student-accounts?sectionId=${modalSectionId}`)
         .then((r) => r.json())
         .then((data) => {
@@ -231,20 +235,105 @@ export default function ICTStudents() {
           customClass: { confirmButton: "cursor-pointer" },
         });
       } else {
-        Swal.fire({
-          title: "Error", text: data.error || "Failed to create account.",
-          icon: "error", confirmButtonColor: "#8B1010",
-          customClass: { confirmButton: "cursor-pointer" },
-        });
+        Swal.fire({ title: "Error", text: data.error || "Failed to create account.", icon: "error", confirmButtonColor: "#8B1010", customClass: { confirmButton: "cursor-pointer" } });
       }
     } catch {
-      Swal.fire({
-        title: "Error", text: "Failed to create account.",
-        icon: "error", confirmButtonColor: "#8B1010",
-        customClass: { confirmButton: "cursor-pointer" },
-      });
+      Swal.fire({ title: "Error", text: "Failed to create account.", icon: "error", confirmButtonColor: "#8B1010", customClass: { confirmButton: "cursor-pointer" } });
     }
     setSaving(false);
+  };
+
+  const handleEdit = (student: StudentData) => {
+    setEditingStudent(student);
+    setEditEmail(student.account_email || "");
+    setEditPassword("");
+    setEditError("");
+    setEditModal(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!editEmail.trim()) { setEditError("Email is required"); return; }
+    setEditLoading(true);
+    setEditError("");
+    try {
+      const res = await fetch(`/api/ict/student-accounts/${editingStudent!.account_db_id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: editEmail.trim(), password: editPassword }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEditModal(false);
+        setEditingStudent(null);
+        fetchAllStudents();
+        Swal.fire({ icon: "success", title: "Updated", text: "Student account has been updated.", timer: 1500, showConfirmButton: false });
+      } else {
+        setEditError(data.error || "Failed to update");
+      }
+    } catch {
+      setEditError("Network error");
+    }
+    setEditLoading(false);
+  };
+
+  const handleDelete = async (student: StudentData) => {
+    if (!student.account_db_id) return;
+    const result = await Swal.fire({
+      title: "Delete Student Account?",
+      html: `Are you sure you want to delete the account for <strong>${formatName(student)}</strong>?<br>This cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#8B1010",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, delete",
+      cancelButtonText: "Cancel",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      const res = await fetch(`/api/ict/student-accounts/${student.account_db_id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        fetchAllStudents();
+        Swal.fire({ icon: "success", title: "Deleted", text: "Account has been deleted.", timer: 1500, showConfirmButton: false });
+      } else {
+        Swal.fire({ icon: "error", title: "Error", text: data.error || "Failed to delete" });
+      }
+    } catch {
+      Swal.fire({ icon: "error", title: "Error", text: "Network error" });
+    }
+  };
+
+  const handleBan = async (student: StudentData) => {
+    if (!student.account_db_id) return;
+    const isBanned = student.account_status === "Banned";
+    const action = isBanned ? "Unban" : "Ban";
+    const result = await Swal.fire({
+      title: `${action} Student?`,
+      html: `Are you sure you want to ${action.toLowerCase()} <strong>${formatName(student)}</strong>?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: isBanned ? "#1E5631" : "#8B1010",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: `Yes, ${action.toLowerCase()}`,
+      cancelButtonText: "Cancel",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      const res = await fetch(`/api/ict/student-accounts/${student.account_db_id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: isBanned ? "Active" : "Banned" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchAllStudents();
+        Swal.fire({ icon: "success", title: `${action}ned`, text: `Student has been ${action.toLowerCase()}ned.`, timer: 1500, showConfirmButton: false });
+      } else {
+        Swal.fire({ icon: "error", title: "Error", text: data.error || `Failed to ${action.toLowerCase()}` });
+      }
+    } catch {
+      Swal.fire({ icon: "error", title: "Error", text: "Network error" });
+    }
   };
 
   const selectedModalStudent = modalStudents.find((s) => s.id === parseInt(modalStudentId));
@@ -285,7 +374,7 @@ export default function ICTStudents() {
             placeholder="Search by name, LRN, or Student ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all"
+            className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all cursor-pointer"
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -331,25 +420,35 @@ export default function ICTStudents() {
                 {filtered.map((student) => (
                   <tr key={student.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono font-medium text-[#8B1010]">
-                      {student.student_id || "—"}
+                      {student.student_id || "\u2014"}
                     </td>
                     <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-800">{formatName(student)}</td>
-                    <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono text-gray-600">{student.lrn || "—"}</td>
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono text-gray-600">{student.lrn || "\u2014"}</td>
                     <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{student.grade} {student.section_name}</td>
                     <td className="px-4 sm:px-6 py-3 sm:py-4">
                       <span className={`inline-flex text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        student.student_id
-                          ? "bg-[#1E5631]/10 text-[#1E5631]"
-                          : "bg-gray-100 text-gray-500"
+                        !student.student_id
+                          ? "bg-gray-100 text-gray-500"
+                          : student.account_status === "Banned"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-[#1E5631]/10 text-[#1E5631]"
                       }`}>
-                        {student.student_id ? "Active" : "No Account"}
+                        {!student.student_id ? "No Account" : student.account_status}
                       </span>
                     </td>
                     <td className="px-4 sm:px-6 py-3 sm:py-4">
-                      {student.student_id ? (
-                        <span className="text-[11px] sm:text-xs text-gray-400">{student.account_email}</span>
+                      {student.account_db_id ? (
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => handleEdit(student)} className="text-[11px] sm:text-xs font-medium text-[#8B1010] hover:underline cursor-pointer">Edit</button>
+                          <span className="text-gray-300">|</span>
+                          <button onClick={() => handleBan(student)} className={`text-[11px] sm:text-xs font-medium hover:underline cursor-pointer ${student.account_status === "Banned" ? "text-[#1E5631]" : "text-orange-600"}`}>
+                            {student.account_status === "Banned" ? "Unban" : "Ban"}
+                          </button>
+                          <span className="text-gray-300">|</span>
+                          <button onClick={() => handleDelete(student)} className="text-[11px] sm:text-xs font-medium text-red-600 hover:underline cursor-pointer">Delete</button>
+                        </div>
                       ) : (
-                        <span className="text-[11px] sm:text-xs text-gray-400">—</span>
+                        <span className="text-[11px] sm:text-xs text-gray-400">-</span>
                       )}
                     </td>
                   </tr>
@@ -367,15 +466,13 @@ export default function ICTStudents() {
         </div>
       </div>
 
-      {/* Add Student Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ animation: "fadeIn 0.2s ease-out" }}>
           <div className="fixed inset-0 bg-black/50" style={{ animation: "fadeIn 0.2s ease-out" }} onClick={() => setShowModal(false)} />
           <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ animation: "modalIn 0.2s ease-out" }}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg font-bold text-gray-800">Add Student Account</h2>
-              <button onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" x2="6" y1="6" y2="18" /><line x1="6" x2="18" y1="6" y2="18" />
                 </svg>
@@ -383,30 +480,18 @@ export default function ICTStudents() {
             </div>
             <div className="px-6 py-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <CustomSelect
-                  label="Grade"
-                  value={modalGrade}
+                <CustomSelect label="Grade" value={modalGrade}
                   onChange={(v) => { setModalGrade(v); setModalSectionId(""); setModalStudentId(""); setModalEmail(""); }}
-                  placeholder="Select grade"
-                  options={GRADES.map((g) => ({ value: g, label: g }))}
-                />
-                <CustomSelect
-                  label="Section"
-                  value={modalSectionId}
+                  placeholder="Select grade" options={GRADES.map((g) => ({ value: g, label: g }))} />
+                <CustomSelect label="Section" value={modalSectionId}
                   onChange={(v) => { setModalSectionId(v); setModalStudentId(""); setModalEmail(""); }}
-                  placeholder={modalGrade ? "Select section" : "Select grade first"}
-                  disabled={!modalGrade}
-                  options={modalFilteredSections.map((s) => ({ value: String(s.id), label: s.name }))}
-                />
+                  placeholder={modalGrade ? "Select section" : "Select grade first"} disabled={!modalGrade}
+                  options={modalFilteredSections.map((s) => ({ value: String(s.id), label: s.name }))} />
               </div>
-              <CustomSelect
-                label="Student"
-                value={modalStudentId}
-                onChange={(v) => setModalStudentId(v)}
+              <CustomSelect label="Student" value={modalStudentId} onChange={(v) => setModalStudentId(v)}
                 placeholder={!modalSectionId ? "Select section first" : loadingModalStudents ? "Loading..." : "Select student"}
                 disabled={!modalSectionId || loadingModalStudents}
-                options={modalStudents.map((s) => ({ value: String(s.id), label: formatName(s) }))}
-              />
+                options={modalStudents.map((s) => ({ value: String(s.id), label: formatName(s) }))} />
               {selectedModalStudent && (
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 grid grid-cols-2 gap-2 text-xs">
                   {selectedModalStudent.lrn && (
@@ -420,25 +505,21 @@ export default function ICTStudents() {
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Email</label>
                 <input type="email" value={modalEmail} onChange={(e) => { setModalEmail(e.target.value); if (emailError) validateEmail(e.target.value); }}
-                  onBlur={() => validateEmail(modalEmail)}
-                  placeholder="Auto-filled from enrollment"
-                  className={`w-full px-3 py-2 border-2 rounded-xl text-sm focus:outline-none transition-all ${emailError ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100" : "border-gray-200 focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10"}`} />
+                  onBlur={() => validateEmail(modalEmail)} placeholder="Auto-filled from enrollment"
+                  className={`w-full px-3 py-2 border-2 rounded-xl text-sm focus:outline-none transition-all cursor-pointer ${emailError ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100" : "border-gray-200 focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10"}`} />
                 {emailError && <p className="text-[11px] text-red-500 mt-1">{emailError}</p>}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Password</label>
                 <input type="password" value={modalPassword} onChange={(e) => { setModalPassword(e.target.value); if (passwordError) validatePassword(e.target.value); }}
-                  onBlur={() => validatePassword(modalPassword)}
-                  placeholder="Minimum 6 characters"
-                  className={`w-full px-3 py-2 border-2 rounded-xl text-sm focus:outline-none transition-all ${passwordError ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100" : "border-gray-200 focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10"}`} />
+                  onBlur={() => validatePassword(modalPassword)} placeholder="Minimum 6 characters"
+                  className={`w-full px-3 py-2 border-2 rounded-xl text-sm focus:outline-none transition-all cursor-pointer ${passwordError ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100" : "border-gray-200 focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10"}`} />
                 {passwordError && <p className="text-[11px] text-red-500 mt-1">{passwordError}</p>}
               </div>
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
               <button onClick={() => setShowModal(false)} disabled={saving}
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors cursor-pointer disabled:opacity-50">
-                Cancel
-              </button>
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors cursor-pointer disabled:opacity-50">Cancel</button>
               <button onClick={handleCreateAccount} disabled={saving || !modalStudentId || !modalEmail || !modalPassword}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#8B1010] text-white rounded-lg hover:bg-[#6e0d0d] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                 {saving && (
@@ -448,6 +529,48 @@ export default function ICTStudents() {
                   </svg>
                 )}
                 {saving ? "Adding..." : "Add Account"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editModal && editingStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ animation: "fadeIn 0.2s ease-out" }}>
+          <div className="fixed inset-0 bg-black/50" style={{ animation: "fadeIn 0.2s ease-out" }} onClick={() => setEditModal(false)} />
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ animation: "modalIn 0.2s ease-out" }}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-bold text-gray-800">Edit Student Account</h2>
+              <button onClick={() => setEditModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" x2="6" y1="6" y2="18" /><line x1="6" x2="18" y1="6" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              {editError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 rounded-lg">{editError}</div>
+              )}
+              <div className="bg-gray-50 rounded-xl p-3 border border-gray-200">
+                <p className="text-xs text-gray-500 mb-1">Student Name</p>
+                <p className="text-sm font-semibold text-gray-800">{formatName(editingStudent)}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Email</label>
+                <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all cursor-pointer" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">New Password <span className="text-gray-400 normal-case">(leave blank to keep current)</span></label>
+                <input type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all cursor-pointer" />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
+              <button onClick={() => setEditModal(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors cursor-pointer">Cancel</button>
+              <button onClick={handleEditSave} disabled={editLoading}
+                className="px-4 py-2 text-sm font-medium bg-[#8B1010] text-white rounded-lg hover:bg-[#6e0d0d] transition-colors disabled:opacity-50 cursor-pointer">
+                {editLoading ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>

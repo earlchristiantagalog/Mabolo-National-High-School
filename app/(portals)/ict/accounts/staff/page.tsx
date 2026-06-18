@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Swal from "sweetalert2";
 
 function CustomSelect({ label, value, onChange, options, placeholder }: {
   label: string;
@@ -30,7 +31,7 @@ function CustomSelect({ label, value, onChange, options, placeholder }: {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-2.5 text-sm border-2 rounded-xl transition-all duration-200 bg-white text-left border-gray-200 hover:border-gray-200"
+        className="w-full flex items-center justify-between px-4 py-2.5 text-sm border-2 rounded-xl transition-all duration-200 bg-white text-left border-gray-200 hover:border-gray-200 cursor-pointer"
       >
         <span className={value ? "text-gray-900 font-medium" : "text-gray-400"}>
           {value ? selected?.label : placeholder || "Select option"}
@@ -46,7 +47,7 @@ function CustomSelect({ label, value, onChange, options, placeholder }: {
               key={opt.value}
               type="button"
               onClick={() => { onChange(opt.value); setOpen(false); }}
-              className={`w-full text-left px-4 py-2.5 text-sm transition-all border-b border-gray-50 last:border-b-0 min-h-[40px] flex items-center ${
+              className={`w-full text-left px-4 py-2.5 text-sm transition-all border-b border-gray-50 last:border-b-0 min-h-[40px] flex items-center cursor-pointer ${
                 opt.value === value
                   ? "bg-[#8B1010]/5 text-[#8B1010] font-semibold"
                   : "text-gray-700 hover:bg-gray-50"
@@ -64,6 +65,7 @@ function CustomSelect({ label, value, onChange, options, placeholder }: {
 const DEPARTMENTS = ["Library", "Registrar", "ICT", "Finance", "Guidance", "Clinic"];
 
 type StaffAccount = {
+  id: number;
   account_id: string;
   name: string;
   department: string;
@@ -85,6 +87,16 @@ export default function ICTStaff() {
   const [modalPassword, setModalPassword] = useState("");
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
+
+  const [editModal, setEditModal] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<StaffAccount | null>(null);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editDepartment, setEditDepartment] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
 
   const fetchStaff = async () => {
     setLoading(true);
@@ -140,6 +152,7 @@ export default function ICTStaff() {
       if (data.success) {
         setShowModal(false);
         fetchStaff();
+        Swal.fire({ icon: "success", title: "Account Created", text: "Staff account has been created.", timer: 1500, showConfirmButton: false });
       } else {
         setModalError(data.error || "Failed to create account");
       }
@@ -147,6 +160,110 @@ export default function ICTStaff() {
       setModalError("Failed to create account");
     }
     setModalLoading(false);
+  };
+
+  const handleEdit = (staff: StaffAccount) => {
+    setEditingStaff(staff);
+    const nameParts = staff.name.split(" ");
+    setEditFirstName(nameParts[0] || "");
+    setEditLastName(nameParts.slice(1).join(" ") || "");
+    setEditEmail(staff.email);
+    setEditDepartment(staff.department);
+    setEditPassword("");
+    setEditError("");
+    setEditModal(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!editFirstName.trim() || !editLastName.trim() || !editEmail.trim() || !editDepartment.trim()) {
+      setEditError("All fields are required");
+      return;
+    }
+    setEditLoading(true);
+    setEditError("");
+    try {
+      const res = await fetch(`/api/ict/staff-accounts/${editingStaff!.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: editFirstName.trim(),
+          lastName: editLastName.trim(),
+          email: editEmail.trim(),
+          department: editDepartment.trim(),
+          password: editPassword,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEditModal(false);
+        setEditingStaff(null);
+        fetchStaff();
+        Swal.fire({ icon: "success", title: "Updated", text: "Staff account has been updated.", timer: 1500, showConfirmButton: false });
+      } else {
+        setEditError(data.error || "Failed to update");
+      }
+    } catch {
+      setEditError("Network error");
+    }
+    setEditLoading(false);
+  };
+
+  const handleDelete = async (staff: StaffAccount) => {
+    const result = await Swal.fire({
+      title: "Delete Staff Account?",
+      html: `Are you sure you want to delete <strong>${staff.name}</strong>?<br>This cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#8B1010",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, delete",
+      cancelButtonText: "Cancel",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      const res = await fetch(`/api/ict/staff-accounts/${staff.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        fetchStaff();
+        Swal.fire({ icon: "success", title: "Deleted", text: "Account has been deleted.", timer: 1500, showConfirmButton: false });
+      } else {
+        Swal.fire({ icon: "error", title: "Error", text: data.error || "Failed to delete" });
+      }
+    } catch {
+      Swal.fire({ icon: "error", title: "Error", text: "Network error" });
+    }
+  };
+
+  const handleBan = async (staff: StaffAccount) => {
+    const isBanned = staff.status === "Banned";
+    const action = isBanned ? "Unban" : "Ban";
+    const result = await Swal.fire({
+      title: `${action} Staff?`,
+      html: `Are you sure you want to ${action.toLowerCase()} <strong>${staff.name}</strong>?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: isBanned ? "#1E5631" : "#8B1010",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: `Yes, ${action.toLowerCase()}`,
+      cancelButtonText: "Cancel",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      const res = await fetch(`/api/ict/staff-accounts/${staff.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: isBanned ? "Active" : "Banned" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchStaff();
+        Swal.fire({ icon: "success", title: `${action}ned`, text: `Staff has been ${action.toLowerCase()}ned.`, timer: 1500, showConfirmButton: false });
+      } else {
+        Swal.fire({ icon: "error", title: "Error", text: data.error || `Failed to ${action.toLowerCase()}` });
+      }
+    } catch {
+      Swal.fire({ icon: "error", title: "Error", text: "Network error" });
+    }
   };
 
   return (
@@ -185,7 +302,7 @@ export default function ICTStaff() {
             placeholder="Search by name, ID, or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all"
+            className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all cursor-pointer"
           />
         </div>
         <div className="w-full sm:w-40">
@@ -224,16 +341,24 @@ export default function ICTStaff() {
                   <td className="px-4 sm:px-6 py-3 sm:py-4">
                     <span
                       className={`inline-flex text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        account.status === "Active"
-                          ? "bg-[#1E5631]/10 text-[#1E5631]"
-                          : "bg-gray-100 text-gray-500"
+                        account.status === "Banned"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-[#1E5631]/10 text-[#1E5631]"
                       }`}
                     >
                       {account.status}
                     </span>
                   </td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4">
-                    <button className="text-[11px] sm:text-xs font-medium text-[#8B1010] hover:underline cursor-pointer">Edit</button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleEdit(account)} className="text-[11px] sm:text-xs font-medium text-[#8B1010] hover:underline cursor-pointer">Edit</button>
+                      <span className="text-gray-300">|</span>
+                      <button onClick={() => handleBan(account)} className={`text-[11px] sm:text-xs font-medium hover:underline cursor-pointer ${account.status === "Banned" ? "text-[#1E5631]" : "text-orange-600"}`}>
+                        {account.status === "Banned" ? "Unban" : "Ban"}
+                      </button>
+                      <span className="text-gray-300">|</span>
+                      <button onClick={() => handleDelete(account)} className="text-[11px] sm:text-xs font-medium text-red-600 hover:underline cursor-pointer">Delete</button>
+                    </div>
                   </td>
                 </tr>
               )) : (
@@ -250,17 +375,13 @@ export default function ICTStaff() {
         </div>
       </div>
 
-      {/* Add Staff Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ animation: "fadeIn 0.2s ease-out" }}>
           <div className="fixed inset-0 bg-black/50" style={{ animation: "fadeIn 0.2s ease-out" }} onClick={() => setShowModal(false)} />
           <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ animation: "modalIn 0.2s ease-out" }}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg font-bold text-gray-800">Add New Staff</h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" x2="6" y1="6" y2="18" /><line x1="6" x2="18" y1="6" y2="18" />
                 </svg>
@@ -270,48 +391,26 @@ export default function ICTStaff() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">First Name</label>
-                  <input
-                    type="text"
-                    value={modalFirstName}
-                    onChange={(e) => setModalFirstName(e.target.value)}
-                    className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all"
-                  />
+                  <input type="text" value={modalFirstName} onChange={(e) => setModalFirstName(e.target.value)}
+                    className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all cursor-pointer" />
                 </div>
                 <div>
                   <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Last Name</label>
-                  <input
-                    type="text"
-                    value={modalLastName}
-                    onChange={(e) => setModalLastName(e.target.value)}
-                    className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all"
-                  />
+                  <input type="text" value={modalLastName} onChange={(e) => setModalLastName(e.target.value)}
+                    className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all cursor-pointer" />
                 </div>
               </div>
               <div>
                 <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Email</label>
-                <input
-                  type="email"
-                  value={modalEmail}
-                  onChange={(e) => setModalEmail(e.target.value)}
-                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all"
-                />
+                <input type="email" value={modalEmail} onChange={(e) => setModalEmail(e.target.value)}
+                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all cursor-pointer" />
               </div>
-              <CustomSelect
-                label="Department"
-                value={modalDepartment}
-                onChange={setModalDepartment}
-                placeholder="Select department"
-                options={DEPARTMENTS.map(d => ({ value: d, label: d }))}
-              />
+              <CustomSelect label="Department" value={modalDepartment} onChange={setModalDepartment} placeholder="Select department"
+                options={DEPARTMENTS.map(d => ({ value: d, label: d }))} />
               <div>
                 <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Password</label>
-                <input
-                  type="password"
-                  value={modalPassword}
-                  onChange={(e) => setModalPassword(e.target.value)}
-                  placeholder="Minimum 6 characters"
-                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all placeholder:text-gray-400"
-                />
+                <input type="password" value={modalPassword} onChange={(e) => setModalPassword(e.target.value)} placeholder="Minimum 6 characters"
+                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all placeholder:text-gray-400 cursor-pointer" />
               </div>
               {modalError && (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-3">
@@ -320,18 +419,62 @@ export default function ICTStaff() {
               )}
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={modalLoading || !modalFirstName || !modalLastName || !modalEmail || !modalDepartment || !modalPassword}
-                className="px-4 py-2 text-sm font-medium bg-[#8B1010] text-white rounded-lg hover:bg-[#6e0d0d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors cursor-pointer">Cancel</button>
+              <button onClick={handleCreate} disabled={modalLoading || !modalFirstName || !modalLastName || !modalEmail || !modalDepartment || !modalPassword}
+                className="px-4 py-2 text-sm font-medium bg-[#8B1010] text-white rounded-lg hover:bg-[#6e0d0d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
                 {modalLoading ? "Creating..." : "Add Staff"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editModal && editingStaff && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ animation: "fadeIn 0.2s ease-out" }}>
+          <div className="fixed inset-0 bg-black/50" style={{ animation: "fadeIn 0.2s ease-out" }} onClick={() => setEditModal(false)} />
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ animation: "modalIn 0.2s ease-out" }}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-bold text-gray-800">Edit Staff</h2>
+              <button onClick={() => setEditModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" x2="6" y1="6" y2="18" /><line x1="6" x2="18" y1="6" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              {editError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 rounded-lg">{editError}</div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">First Name</label>
+                  <input type="text" value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)}
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all cursor-pointer" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Last Name</label>
+                  <input type="text" value={editLastName} onChange={(e) => setEditLastName(e.target.value)}
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all cursor-pointer" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Email</label>
+                <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all cursor-pointer" />
+              </div>
+              <CustomSelect label="Department" value={editDepartment} onChange={setEditDepartment} placeholder="Select department"
+                options={DEPARTMENTS.map(d => ({ value: d, label: d }))} />
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">New Password <span className="text-gray-400 normal-case">(leave blank to keep current)</span></label>
+                <input type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all cursor-pointer" />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
+              <button onClick={() => setEditModal(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors cursor-pointer">Cancel</button>
+              <button onClick={handleEditSave} disabled={editLoading}
+                className="px-4 py-2 text-sm font-medium bg-[#8B1010] text-white rounded-lg hover:bg-[#6e0d0d] transition-colors disabled:opacity-50 cursor-pointer">
+                {editLoading ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>

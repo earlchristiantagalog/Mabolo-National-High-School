@@ -1,6 +1,8 @@
-CREATE TABLE IF NOT EXISTS teacher_accounts (
+CREATE TABLE IF NOT EXISTS admin_accounts (
   id SERIAL PRIMARY KEY,
-  teacher_name VARCHAR(255) NOT NULL UNIQUE,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  role VARCHAR(100) NOT NULL,
   email VARCHAR(255) NOT NULL,
   account_id VARCHAR(20) NOT NULL UNIQUE,
   password TEXT NOT NULL,
