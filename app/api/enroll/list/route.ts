@@ -54,6 +54,8 @@ interface EnrollmentRow {
   updated_at: string;
 }
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const applicants = await query<EnrollmentRow[]>(

@@ -72,6 +72,8 @@ async function sendAccountEmail(
   await transporter.sendMail(mailOptions);
 }
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     await ensureTable();
@@ -87,11 +89,13 @@ export async function GET() {
               ta.account_id,
               ta.created_at,
               COALESCE(
-                (SELECT json_agg(json_build_object('name', s2.name, 'grade', s2.grade))
-                 FROM section_periods sp2
-                 JOIN sections s2 ON sp2.section_id = s2.id
-                 WHERE sp2.teacher = sp.teacher
-                 GROUP BY s2.name, s2.grade),
+                (SELECT json_agg(json_build_object('name', t.name, 'grade', t.grade))
+                 FROM (
+                   SELECT DISTINCT s2.name, s2.grade
+                   FROM section_periods sp2
+                   JOIN sections s2 ON sp2.section_id = s2.id
+                   WHERE sp2.teacher = sp.teacher
+                 ) t),
                 '[]'::json
               ) AS sections
        FROM section_periods sp
