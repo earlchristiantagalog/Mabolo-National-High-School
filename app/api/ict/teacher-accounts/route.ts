@@ -84,10 +84,10 @@ export async function GET() {
       created_at: string | null;
       sections: { name: string; grade: string }[] | null;
     }[]>(
-      `SELECT DISTINCT sp.teacher AS teacher_name,
-              ta.email,
-              ta.account_id,
-              ta.created_at,
+      `SELECT sp.teacher AS teacher_name,
+              MAX(ta.email) AS email,
+              MAX(ta.account_id) AS account_id,
+              MAX(ta.created_at) AS created_at,
               COALESCE(
                 (SELECT json_agg(json_build_object('name', t.name, 'grade', t.grade))
                  FROM (
@@ -101,6 +101,7 @@ export async function GET() {
        FROM section_periods sp
        LEFT JOIN teacher_accounts ta ON ta.teacher_name = sp.teacher
        WHERE sp.teacher IS NOT NULL AND sp.teacher != ''
+       GROUP BY sp.teacher
        ORDER BY sp.teacher`
     );
     return NextResponse.json({ success: true, teachers });
