@@ -1,6 +1,16 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+
+type Section = { id: number; name: string; grade: string };
+
+type TeacherAccount = {
+  teacher_name: string;
+  email: string;
+  account_id: string;
+  created_at: string;
+  sections: { name: string; grade: string }[] | null;
+};
 
 function CustomSelect({ label, value, onChange, options, placeholder }: {
   label: string;
@@ -11,7 +21,6 @@ function CustomSelect({ label, value, onChange, options, placeholder }: {
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
   const selected = options.find((o) => o.value === value);
 
   useEffect(() => {
@@ -61,27 +70,136 @@ function CustomSelect({ label, value, onChange, options, placeholder }: {
   );
 }
 
-const MOCK_TEACHERS = [
-  { id: "T001", name: "Maria Garcia", subject: "Mathematics", email: "maria.garcia@mnhs.edu.ph", status: "Active" },
-  { id: "T002", name: "Jose Santos", subject: "Science", email: "jose.santos@mnhs.edu.ph", status: "Active" },
-  { id: "T003", name: "Ana Reyes", subject: "English", email: "ana.reyes@mnhs.edu.ph", status: "Active" },
-  { id: "T004", name: "Pedro Cruz", subject: "Filipino", email: "pedro.cruz@mnhs.edu.ph", status: "Inactive" },
-  { id: "T005", name: "Rosa Lim", subject: "History", email: "rosa.lim@mnhs.edu.ph", status: "Active" },
-];
-
 export default function ICTTeachers() {
+  const [sections, setSections] = useState<Section[]>([]);
+  const [gradeFilter, setGradeFilter] = useState("");
+  const [sectionFilter, setSectionFilter] = useState("");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [allTeachers, setAllTeachers] = useState<TeacherAccount[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [modalStatus, setModalStatus] = useState("");
+  const [modalGrade, setModalGrade] = useState("");
+  const [modalSections, setModalSections] = useState<Section[]>([]);
+  const [modalSectionId, setModalSectionId] = useState("");
+  const [modalTeachers, setModalTeachers] = useState<string[]>([]);
+  const [modalTeacher, setModalTeacher] = useState("");
+  const [modalEmail, setModalEmail] = useState("");
+  const [modalPassword, setModalPassword] = useState("");
+  const [modalLoading, setModalLoading] = useState(false);
+  const [modalError, setModalError] = useState("");
 
-  const filtered = MOCK_TEACHERS.filter(
-    (a) =>
-      (a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.id.includes(search) ||
-      a.email.toLowerCase().includes(search.toLowerCase())) &&
-      (!statusFilter || a.status === statusFilter)
-  );
+  const uniqueGrades = [...new Set(sections.map((s) => s.grade))].sort();
+  const gradeSections = gradeFilter
+    ? sections.filter((s) => s.grade === gradeFilter)
+    : sections;
+
+  const fetchSections = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/sections");
+      const data = await res.json();
+      if (data.success) setSections(data.sections);
+    } catch { /* empty */ }
+  }, []);
+
+  const fetchAllTeachers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/ict/teacher-accounts");
+      const data = await res.json();
+      if (data.success) setAllTeachers(data.teachers);
+      else setAllTeachers([]);
+    } catch { setAllTeachers([]); }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchSections(); }, [fetchSections]);
+  useEffect(() => { fetchAllTeachers(); }, [fetchAllTeachers]);
+
+  useEffect(() => {
+    if (!modalSectionId) { setModalTeachers([]); return; }
+    fetch(`/api/ict/teacher-accounts/teachers?sectionId=${modalSectionId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) setModalTeachers(data.teachers);
+        else setModalTeachers([]);
+      })
+      .catch(() => setModalTeachers([]));
+  }, [modalSectionId]);
+
+  useEffect(() => {
+    if (!modalTeacher) { setModalEmail(""); return; }
+    const existing = allTeachers.find((t) => t.teacher_name === modalTeacher);
+    if (existing) {
+      setModalEmail(existing.email);
+    } else {
+      const slug = modalTeacher.toLowerCase().replace(/[^a-z0-9]+/g, ".");
+      setModalEmail(`${slug}@mnhs.edu.ph`);
+    }
+  }, [modalTeacher, allTeachers]);
+
+  useEffect(() => {
+    if (!modalGrade) { setModalSections([]); return; }
+    setModalSections(sections.filter((s) => s.grade === modalGrade));
+  }, [modalGrade, sections]);
+
+  useEffect(() => {
+    if (showModal) {
+      setModalGrade("");
+      setModalSectionId("");
+      setModalTeacher("");
+      setModalEmail("");
+      setModalPassword("");
+      setModalError("");
+    }
+  }, [showModal]);
+
+  const filtered = allTeachers.filter((t) => {
+    const sectionsMatch = !gradeFilter || (t.sections || []).some((s) => s.grade === gradeFilter);
+    const sectionMatch = !sectionFilter || (t.sections || []).some((s) => String(s.grade) === gradeFilter && s.name === sections.find((sec) => String(sec.id) === sectionFilter)?.name);
+    const searchMatch = !search ||
+      t.teacher_name.toLowerCase().includes(search.toLowerCase()) ||
+      t.email.toLowerCase().includes(search.toLowerCase()) ||
+      t.account_id.includes(search);
+    return sectionsMatch && sectionMatch && searchMatch;
+  });
+
+  const handleCreate = async () => {
+    if (!modalTeacher || !modalEmail || !modalPassword) {
+      setModalError("All fields are required");
+      return;
+    }
+    setModalLoading(true);
+    setModalError("");
+    try {
+      const res = await fetch("/api/ict/teacher-accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teacherName: modalTeacher,
+          email: modalEmail,
+          password: modalPassword,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowModal(false);
+        fetchAllTeachers();
+      } else {
+        setModalError(data.error || "Failed to create account");
+      }
+    } catch {
+      setModalError("Failed to create account");
+    }
+    setModalLoading(false);
+  };
+
+  const getSectionsDisplay = (t: TeacherAccount) => {
+    if (!t.sections || t.sections.length === 0) return "—";
+    const unique = t.sections.filter(
+      (s, i, arr) => arr.findIndex((x) => x.name === s.name && x.grade === s.grade) === i
+    );
+    return unique.map((s) => `${s.grade} ${s.name}`).join(", ");
+  };
 
   return (
     <>
@@ -94,7 +212,7 @@ export default function ICTTeachers() {
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Teachers</h1>
             <p className="text-xs sm:text-sm text-gray-500 mt-1">
-              Manage teacher accounts — {MOCK_TEACHERS.length} total
+              Manage teacher accounts — {allTeachers.length} total
             </p>
           </div>
           <button
@@ -122,17 +240,25 @@ export default function ICTTeachers() {
             className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all"
           />
         </div>
-        <div className="w-full sm:w-40">
-          <CustomSelect
-            label="Status"
-            value={statusFilter}
-            onChange={setStatusFilter}
-            placeholder="All"
-            options={[
-              { value: "Active", label: "Active" },
-              { value: "Inactive", label: "Inactive" },
-            ]}
-          />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="w-full sm:w-40">
+            <CustomSelect
+              label="Grade"
+              value={gradeFilter}
+              onChange={(v) => { setGradeFilter(v); setSectionFilter(""); }}
+              placeholder="All Grades"
+              options={uniqueGrades.map((g) => ({ value: g, label: g }))}
+            />
+          </div>
+          <div className="w-full sm:w-44">
+            <CustomSelect
+              label="Section"
+              value={sectionFilter}
+              onChange={setSectionFilter}
+              placeholder="All Sections"
+              options={gradeSections.map((s) => ({ value: String(s.id), label: s.name }))}
+            />
+          </div>
         </div>
       </div>
 
@@ -141,41 +267,34 @@ export default function ICTTeachers() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">ID</th>
+                <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Teacher ID</th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Subject</th>
+                <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Sections</th>
                 <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-4 sm:px-6 py-3 text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filtered.map((account) => (
-                <tr key={account.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono font-medium text-[#8B1010]">{account.id}</td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-800">{account.name}</td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{account.subject}</td>
+              {loading ? (
+                <tr><td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-400">Loading...</td></tr>
+              ) : filtered.length > 0 ? filtered.map((account) => (
+                <tr key={account.teacher_name} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono font-medium text-[#8B1010]">{account.account_id}</td>
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-800">{account.teacher_name}</td>
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{getSectionsDisplay(account)}</td>
                   <td className="hidden sm:table-cell px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-500">{account.email}</td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4">
-                    <span
-                      className={`inline-flex text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        account.status === "Active"
-                          ? "bg-[#1E5631]/10 text-[#1E5631]"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {account.status}
+                    <span className="inline-flex text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-[#1E5631]/10 text-[#1E5631]">
+                      Active
                     </span>
                   </td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4">
-                    <button className="text-[11px] sm:text-xs font-medium text-[#8B1010] hover:underline">Edit</button>
-                  </td>
                 </tr>
-              ))}
-              {filtered.length === 0 && (
+              )              ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-400">
-                    No teachers found matching &quot;{search}&quot;
+                  <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-400">
+                    {allTeachers.length === 0 && !search
+                      ? "No teacher accounts yet"
+                      : `No teachers found matching \u201c${search}\u201d`}
                   </td>
                 </tr>
               )}
@@ -184,17 +303,13 @@ export default function ICTTeachers() {
         </div>
       </div>
 
-      {/* Add Teacher Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ animation: "fadeIn 0.2s ease-out" }}>
           <div className="fixed inset-0 bg-black/50" style={{ animation: "fadeIn 0.2s ease-out" }} onClick={() => setShowModal(false)} />
           <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ animation: "modalIn 0.2s ease-out" }}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg font-bold text-gray-800">Add New Teacher</h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" x2="6" y1="6" y2="18" /><line x1="6" x2="18" y1="6" y2="18" />
                 </svg>
@@ -202,52 +317,87 @@ export default function ICTTeachers() {
             </div>
             <div className="px-6 py-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">First Name</label>
-                  <input type="text" className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Last Name</label>
-                  <input type="text" className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Email</label>
-                <input type="email" className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Subject</label>
-                  <input type="text" className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
-                </div>
                 <CustomSelect
-                  label="Status"
-                  value={modalStatus}
-                  onChange={setModalStatus}
-                  placeholder="Select status"
-                  options={[
-                    { value: "Active", label: "Active" },
-                    { value: "Inactive", label: "Inactive" },
-                  ]}
+                  label="Grade"
+                  value={modalGrade}
+                  onChange={(v) => { setModalGrade(v); setModalSectionId(""); setModalTeacher(""); }}
+                  placeholder="Select grade"
+                  options={uniqueGrades.map((g) => ({ value: g, label: g }))}
+                />
+                <CustomSelect
+                  label="Section"
+                  value={modalSectionId}
+                  onChange={(v) => { setModalSectionId(v); setModalTeacher(""); }}
+                  placeholder={modalGrade ? "Select section" : "Select grade first"}
+                  options={modalSections.map((s) => ({ value: String(s.id), label: s.name }))}
                 />
               </div>
+
+              <CustomSelect
+                label="Teacher"
+                value={modalTeacher}
+                onChange={setModalTeacher}
+                placeholder={modalSectionId ? "Select teacher" : "Select section first"}
+                options={modalTeachers.map((t) => ({ value: t, label: t }))}
+              />
+
+              {modalTeacher && (
+                <div className="bg-gray-50 rounded-xl p-3 border border-gray-200" style={{ animation: "fadeIn 0.2s ease-out" }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#1E5631]/10 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E5631" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">{modalTeacher}</p>
+                      <p className="text-xs text-gray-500">Grade {modalGrade} — {modalSections.find((s) => String(s.id) === modalSectionId)?.name}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Password</label>
-                <input type="password" className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all" />
+                <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Email</label>
+                <input
+                  type="email"
+                  value={modalEmail}
+                  onChange={(e) => setModalEmail(e.target.value)}
+                  placeholder="teacher@mnhs.edu.ph"
+                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all placeholder:text-gray-400"
+                />
               </div>
+
+              <div>
+                <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Password</label>
+                <input
+                  type="password"
+                  value={modalPassword}
+                  onChange={(e) => setModalPassword(e.target.value)}
+                  placeholder="Minimum 6 characters"
+                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B1010] focus:ring-2 focus:ring-[#8B1010]/10 transition-all placeholder:text-gray-400"
+                />
+              </div>
+
+              {modalError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                  <p className="text-xs text-red-600">{modalError}</p>
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-sm font-medium bg-[#8B1010] text-white rounded-lg hover:bg-[#6e0d0d] transition-colors"
+                onClick={handleCreate}
+                disabled={modalLoading || !modalTeacher || !modalEmail || !modalPassword}
+                className="px-4 py-2 text-sm font-medium bg-[#8B1010] text-white rounded-lg hover:bg-[#6e0d0d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                Add Teacher
+                {modalLoading ? "Creating..." : "Add Teacher"}
               </button>
             </div>
           </div>

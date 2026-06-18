@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS teacher_accounts (
+  id SERIAL PRIMARY KEY,
+  teacher_name VARCHAR(255) NOT NULL UNIQUE,
+  email VARCHAR(255) NOT NULL,
+  account_id VARCHAR(20) NOT NULL UNIQUE,
+  password TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);

@@ -2,19 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import nodemailer from "nodemailer";
 
-async function ensureTable() {
-  await query(`
-    CREATE TABLE IF NOT EXISTS student_accounts (
-      id SERIAL PRIMARY KEY,
-      student_id INTEGER NOT NULL UNIQUE REFERENCES section_students(id) ON DELETE CASCADE,
-      account_id VARCHAR(20) NOT NULL UNIQUE,
-      email VARCHAR(255) NOT NULL,
-      password TEXT NOT NULL,
-      created_at TIMESTAMP DEFAULT NOW()
-    )
-  `);
-}
-
 function generateStudentId(): string {
   const digits = Math.floor(10000000 + Math.random() * 90000000);
   return String(digits);
@@ -85,7 +72,6 @@ async function sendAccountEmail(
 
 export async function GET(req: NextRequest) {
   try {
-    await ensureTable();
     const { searchParams } = new URL(req.url);
     const sectionId = searchParams.get("sectionId");
 
@@ -147,7 +133,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    await ensureTable();
     const { studentId, email, password } = await req.json();
     if (!studentId || !email || !password) {
       return NextResponse.json({ success: false, error: "studentId, email, and password are required" }, { status: 400 });
