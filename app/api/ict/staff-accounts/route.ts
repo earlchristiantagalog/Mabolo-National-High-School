@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import nodemailer from "nodemailer";
 
@@ -54,7 +54,6 @@ async function sendAccountEmail(
           <h2 style="color: #8B1010; margin-top: 0;">Staff Account Created!</h2>
           <p>Hello ${firstName},</p>
           <p>Your staff account for the <strong>${department}</strong> department has been created. Below are your login credentials.</p>
-
           <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #eee;">
             <h3 style="color: #8B1010; margin-top: 0; font-size: 16px; margin-bottom: 15px;">Login Credentials</h3>
             <table style="width: 100%; font-size: 13px; color: #333;">
@@ -62,11 +61,9 @@ async function sendAccountEmail(
               <tr><td style="padding: 5px 0; color: #666;">Password</td><td style="padding: 5px 0; font-weight: bold; font-family: monospace;">${password}</td></tr>
             </table>
           </div>
-
           <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #ffc107;">
             <p style="margin: 0; font-size: 13px; color: #856404;"><strong>Important:</strong> Please keep your Staff ID and Password secure.</p>
           </div>
-
           <hr style="border: none; border-top: 1px solid #ddd; margin: 25px 0;">
           <p style="color: #999; font-size: 11px; text-align: center;">This is an automated message. Please do not reply directly to this email.</p>
         </div>
