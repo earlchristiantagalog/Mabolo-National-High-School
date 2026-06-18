@@ -130,7 +130,7 @@ export default function ICTTeachers() {
     if (!modalTeacher) { setModalEmail(""); return; }
     const existing = allTeachers.find((t) => t.teacher_name === modalTeacher);
     if (existing) {
-      setModalEmail(existing.email);
+      setModalEmail(existing.email || "");
     } else {
       const slug = modalTeacher.toLowerCase().replace(/[^a-z0-9]+/g, ".");
       setModalEmail(`${slug}@mnhs.edu.ph`);
