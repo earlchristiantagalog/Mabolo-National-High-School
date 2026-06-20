@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 const NAV_ITEMS = [
@@ -59,10 +59,28 @@ const NAV_ITEMS = [
 
 export default function ICTLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [accountsOpen, setAccountsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string; type: string } | null>(null);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (!stored) {
+      router.push("/login");
+      return;
+    }
+    const parsed = JSON.parse(stored);
+    if (parsed.type !== "staff") {
+      router.push("/forbidden");
+      return;
+    }
+    setUser(parsed);
+    setChecking(false);
+  }, [router]);
 
   useEffect(() => {
     const hasActiveChild = NAV_ITEMS.some((item) =>
@@ -70,6 +88,15 @@ export default function ICTLayout({ children }: { children: React.ReactNode }) {
     );
     if (hasActiveChild) setAccountsOpen(true);
   }, [pathname]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    router.push("/login");
+  };
+
+  if (checking || !user) {
+    return <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center"><div className="w-7 h-7 border-2 border-[#8B1010] border-t-transparent rounded-full animate-spin" /></div>;
+  }
 
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
@@ -241,10 +268,10 @@ export default function ICTLayout({ children }: { children: React.ReactNode }) {
                 className="flex items-center gap-2 pl-3 border-l border-gray-200 cursor-pointer"
               >
                 <div className="w-8 h-8 rounded-full bg-[#8B1010] flex items-center justify-center text-white text-xs font-bold">
-                  AD
+                  {user.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-semibold text-gray-700 leading-tight">Admin</p>
+                  <p className="text-sm font-semibold text-gray-700 leading-tight">{user.name}</p>
                   <p className="text-[10px] text-gray-400">ICT Department</p>
                 </div>
               </button>
@@ -253,8 +280,8 @@ export default function ICTLayout({ children }: { children: React.ReactNode }) {
                   <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
                   <div className="fixed inset-x-4 top-16 sm:inset-x-auto sm:absolute sm:right-0 sm:top-full sm:mt-2 sm:w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
                     <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-semibold text-gray-700">Admin</p>
-                      <p className="text-xs text-gray-400">admin@mnhs.edu.ph</p>
+                      <p className="text-sm font-semibold text-gray-700">{user.name}</p>
+                      <p className="text-xs text-gray-400">{user.email}</p>
                     </div>
                     <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -262,7 +289,7 @@ export default function ICTLayout({ children }: { children: React.ReactNode }) {
                       </svg>
                       Profile
                     </button>
-                    <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors border-t border-gray-100 cursor-pointer">
+                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors border-t border-gray-100 cursor-pointer">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" />
                       </svg>

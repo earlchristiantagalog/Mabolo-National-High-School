@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
 const NAV_ITEMS = [
   {
@@ -44,9 +44,36 @@ const NAV_ITEMS = [
 
 export default function RegistrarLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string; type: string } | null>(null);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (!stored) {
+      router.push("/login");
+      return;
+    }
+    const parsed = JSON.parse(stored);
+    if (!["admin", "staff"].includes(parsed.type)) {
+      router.push("/forbidden");
+      return;
+    }
+    setUser(parsed);
+    setChecking(false);
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    router.push("/login");
+  };
+
+  if (checking || !user) {
+    return <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center"><div className="w-7 h-7 border-2 border-[#8B1010] border-t-transparent rounded-full animate-spin" /></div>;
+  }
 
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
